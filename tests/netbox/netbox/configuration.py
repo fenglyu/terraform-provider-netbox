@@ -26,7 +26,7 @@ DATABASE = {
 # to use two separate database IDs.
 REDIS = {
     'tasks': {
-        'HOST': 'localhost',
+        'HOST': 'redis',
         'PORT': 6379,
         # Comment out `HOST` and `PORT` lines and uncomment the following if using Redis Sentinel
         # 'SENTINELS': [('mysentinel.redis.example.com', 6379)],
@@ -37,7 +37,7 @@ REDIS = {
         'SSL': False,
     },
     'caching': {
-        'HOST': 'localhost',
+        'HOST': 'redis',
         'PORT': 6379,
         # Comment out `HOST` and `PORT` lines and uncomment the following if using Redis Sentinel
         # 'SENTINELS': [('mysentinel.redis.example.com', 6379)],
