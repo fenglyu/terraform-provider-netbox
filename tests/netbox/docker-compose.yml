@@ -3,7 +3,7 @@ version: '3.8'
 services:
   db:
 #    build: ./postgresql
-#    image: postgresql:20200620
+#    image: postgresql:20200622
     image: postgres:latest
     restart: always
     environment:
@@ -22,7 +22,7 @@ services:
 
   netbox:
     build: ./netbox
-    image: netbox:20200620
+    image: netbox:20200622
     depends_on:
       - db
       - redis
@@ -33,9 +33,11 @@ services:
       - backend
 
   nginx:
-    image: nginx:1.19.0-alpine
- #   volumes:
- #     - ./http/nginx.conf:/etc/nginx/nginx.conf:ro
+    build: ./nginx
+      image: nginx:20200622
+ #   image: nginx:1.19.0-alpine
+ #  volumes:
+ #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
       - 80:80
     networks:
