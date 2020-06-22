@@ -1,6 +1,3 @@
-ARG version="2.8.6"
-ARG piprepo="https://pypi.tuna.tsinghua.edu.cn/simple"
-
 FROM centos:centos8
 
 COPY ./ /
@@ -28,9 +25,7 @@ RUN pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple virtualenv && \
 
 RUN /opt/netbox/venv/bin/pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r /opt/netbox/requirements.txt
 
-#RUN cd netbox/netbox/ && \
-#    cp configuration.example.py configuration.py && \
-#    sed -i "s###g" configuration.py
+
 RUN  cp ./configuration.py /opt/netbox/netbox/netbox/
 
 #RUN cd /opt/netbox/netbox/ && \

@@ -2,8 +2,6 @@ version: '3.8'
 
 services:
   db:
-#    build: ./postgresql
-#    image: postgresql:20200622
     image: postgres:latest
     restart: always
     environment:
