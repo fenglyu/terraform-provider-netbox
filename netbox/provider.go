@@ -1,44 +1,49 @@
 package netbox
 
 import (
-	"fmt"
-
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-
-	"github.com/fenglyu/go-netbox/netbox"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
-func Provider() *schema.Provider {
+func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"api_token": {
-				Type: schema.TypeString,
+				Type:     schema.TypeString,
 				Optional: true,
 				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
 					"API_TOKEN",
 					"NETBOX_API_TOKEN",
 				}, nil),
-				ValidateFunc: validateCredentials,
+				//ValidateFunc: validateCredentials,
 			},
-			"host":{
-				Type: schema.TypeString,
+			"host": {
+				Type:     schema.TypeString,
 				Optional: true,
 				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
 					"NETBOX_HOST",
 				}, NetboxDefaultHost),
 			},
 			"base_path": {
-				Type: schema.TypeString,
+				Type:     schema.TypeString,
 				Optional: true,
 				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
 					"NETBOX_BASE_PATH",
 				}, NetboxDefaultBasePath),
 			},
 		},
-		ResourcesMap: map[string]*schema.Resource{},
+		ResourcesMap: ResourceMap(),
 	}
 }
 
+func ResourceMap() map[string]*schema.Resource {
+	return map[string]*schema.Resource{
+		"ipam_available_prefixes": resourceIpamPrefixes(),
+		//"ipam_prefixes_available_ips":
+	}
+}
+
+/*
 func validateCredentials(v interface{}, k string) (warnings []string, errors []error) {
 	if v == nil ||v.(string) == ""{
 		return
@@ -51,3 +56,4 @@ func validateCredentials(v interface{}, k string) (warnings []string, errors []e
 	}
 	return
 }
+*/

@@ -9,6 +9,7 @@ require (
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/aws/aws-sdk-go v1.32.5 // indirect
 	github.com/fatih/color v1.9.0 // indirect
+	github.com/fenglyu/go-netbox v0.0.0-20200622172827-b116615b2d73
 	github.com/google/go-cmp v0.5.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
@@ -16,7 +17,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/hcl/v2 v2.6.0 // indirect
 	github.com/hashicorp/terraform v0.12.26 // indirect
-	github.com/hashicorp/terraform-plugin-sdk v1.14.0 // indirect
+	github.com/hashicorp/terraform-plugin-sdk v1.14.0
 	github.com/hashicorp/terraform-svchost v0.0.0-20191119180714-d2e4933b9136 // indirect
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mitchellh/cli v1.1.1 // indirect
