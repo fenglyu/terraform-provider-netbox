@@ -4,11 +4,12 @@ import (
 	//"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	//	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
 	"time"
 )
 
 var initializeStatus = []string{
-	"container",  "active", "reserved", "deprecated",
+	"container", "active", "reserved", "deprecated",
 }
 
 func resourceIpamPrefixes() *schema.Resource {
@@ -17,9 +18,11 @@ func resourceIpamPrefixes() *schema.Resource {
 		Read:   resourceIpamPrefixesRead,
 		Update: resourceIpamPrefixesUpdate,
 		Delete: resourceIpamPrefixesDelete,
-		Importer: &schema.ResourceImporter{
-			State: resourceIpamPrefixesImportState,
-		},
+		/*
+			Importer: &schema.ResourceImporter{
+				State: resourceIpamPrefixesImportState,
+			},
+		*/
 		SchemaVersion: 1,
 		// TODO after test coverage finished
 		//MigrateState:
@@ -31,83 +34,85 @@ func resourceIpamPrefixes() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"prefix": {
-				Type:     schema.TypeList,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeList,
+				Required:    true,
+				ForceNew:    true,
 				Description: "The IPAM prefix in netbox",
-				Elem:&schema.Resource{
+				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"prefix": {
-							Type: schema.TypeString,
-							Required: true,
-							ForceNew: true,
-							ValidateFunc: validation.IsCIDRNetwork(8,32),
-							Description: "IPv4 or IPv6 network with mask",
+							Type:         schema.TypeString,
+							Required:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.IsCIDRNetwork(8, 32),
+							Description:  "IPv4 or IPv6 network with mask",
 						},
 
-						"role":{
-							Type: schema.TypeString,
-							Optional: true,
-							ForceNew: true,
+						"role": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							ForceNew:    true,
 							Description: "The primary function of this prefix  ",
 						},
-						"site":{
-							Type: schema.TypeString,
-							Optional: true,
-							ForceNew: true,
+						"site": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							ForceNew:    true,
 							Description: "Site",
 						},
 						"tags": {
-							Type: schema.TypeList,
-							Optional: true,
-							ForceNew: true,
+							Type:        schema.TypeList,
+							Optional:    true,
+							ForceNew:    true,
 							Description: "tags",
 						},
-						"tenant":{
-							Type: schema.TypeInt,
-							Optional: true,
-							ForceNew: true,
+						"tenant": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							ForceNew:    true,
 							Description: "Tenant",
 						},
-						"vlan":{
-							Type:schema.TypeInt,
-							Optional: true,
-							ForceNew: true,
+						"vlan": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							ForceNew:    true,
 							Description: "VLAN",
 						},
-						"vrf":{
-							Type: schema.TypeInt,
-							Optional: true,
-							ForceNew: true,
+						"vrf": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							ForceNew:    true,
 							Description: "VRF",
 						},
-						"ispool":{
-							Type: schema.TypeBool,
-							Optional: true,
-							Default: false,
-							ForceNew: true,
+						"ispool": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							ForceNew:    true,
 							Description: "All IP addresses within this prefix are considered usable",
 						},
-						"status":{
-							Type: schema.TypeString,
-							Default: "activIPv4 or IPv6 network with maske",
-							Computed: true,
-							ForceNew: true,
-							ValidateFunc: validation.StringInSlice([]string{"container",  "active", "reserved", "deprecated",}, false),
-							Description: "Operational status of this prefix",
+						"status": {
+							Type:         schema.TypeString,
+							Default:      "activIPv4 or IPv6 network with maske",
+							Computed:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.StringInSlice([]string{"container", "active", "reserved", "deprecated"}, false),
+							Description:  "Operational status of this prefix",
 						},
 						"description": {
-							Type: schema.TypeString,
-							Optional: true,
-							Computed: true,
-							ForceNew: true,
+							Type:         schema.TypeString,
+							Optional:     true,
+							Computed:     true,
+							ForceNew:     true,
 							ValidateFunc: validation.StringLenBetween(0, 200),
-							Description: "Describe the purpose of this prefix",
+							Description:  "Describe the purpose of this prefix",
 						},
 					},
 				},
 			},
 		},
+
+		//	CustomizeDiff: nil,
 	}
 }
 
@@ -116,6 +121,8 @@ func resourceIpamPrefixesCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceIpamPrefixesRead(d *schema.ResourceData, m interface{}) error {
+	config := m.(*Config)
+
 	return nil
 }
 
@@ -126,6 +133,7 @@ func resourceIpamPrefixesUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceIpamPrefixesDelete(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
+
 /*
 func resourceIpamPrefixesImportState(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
@@ -146,4 +154,4 @@ func resourceIpamPrefixesImportState(d *schema.ResourceData, meta interface{}) (
 
 	return []*schema.ResourceData{d}, nil
 }
- */
+*/
