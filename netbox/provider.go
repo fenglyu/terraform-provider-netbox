@@ -37,6 +37,11 @@ func Provider() terraform.ResourceProvider {
 				Optional: true,
 			},
 		},
+
+		DataSourcesMap: map[string]*schema.Resource{
+			"ipam_available_prefixes": dataSourceIpamPrefixes(),
+		},
+
 		ResourcesMap: ResourceMap(),
 	}
 
