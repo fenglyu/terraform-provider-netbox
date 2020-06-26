@@ -1,3 +1,4 @@
+## Inspect container IP addr
 ```bash
 flv@genji ~ % docker inspect  $(docker ps --format "{{.ID}} {{.Names}}" |awk '/db/ {print $1}')|jq '.[0]|.NetworkSettings.Networks'
 {
@@ -22,7 +23,7 @@ flv@genji ~ % docker inspect  $(docker ps --format "{{.ID}} {{.Names}}" |awk '/d
 }
 
 ```
-
+## Create an admin user
 ```bash
 flv@genji ~ % docker exec -it netbox_netbox_1 /bin/bash                                              
 [root@3ddd4ec6fec0 /]#                                                                                                                                                                                     

@@ -4,7 +4,6 @@ import (
 	//"fmt"
 
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -34,9 +33,11 @@ type Config struct {
 }
 
 func (c *Config) LoadAndValidate(ctx context.Context) error {
+
 	if c.BasePath == "" {
 		c.BasePath = NetboxDefaultBasePath
 	}
+
 	if c.Host == "" {
 		c.Host = NetboxDefaultHost
 	}
@@ -45,8 +46,7 @@ func (c *Config) LoadAndValidate(ctx context.Context) error {
 	log.Print("[INFO] Instantiating http client for host %s and path %s", c.Host, c.BasePath)
 	if c.ApiToken != "" {
 		if len(c.ApiToken) != 40 {
-			err := errors.New("Token length is not 40")
-			return err
+			return fmt.Errorf("Token length is not 40")
 		}
 		t.DefaultAuthentication = runtimeclient.APIKeyAuth(AuthHeaderName, "header", fmt.Sprintf(AuthHeaderFormat, c.ApiToken))
 	}
