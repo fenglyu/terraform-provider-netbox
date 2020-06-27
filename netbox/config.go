@@ -28,7 +28,7 @@ type Config struct {
 	RequestTimeout time.Duration
 
 	// new box client
-	NetBox  *client.NetBox
+	client  *client.NetBox
 	context context.Context
 }
 
@@ -52,7 +52,7 @@ func (c *Config) LoadAndValidate(ctx context.Context) error {
 	}
 
 	t.SetDebug(true)
-	c.NetBox = client.New(t, strfmt.Default)
+	c.client = client.New(t, strfmt.Default)
 
 	return nil
 }

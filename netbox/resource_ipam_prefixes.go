@@ -1,7 +1,6 @@
 package netbox
 
 import (
-	"fmt"
 	//"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
@@ -123,7 +122,7 @@ func resourceIpamPrefixesCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceIpamPrefixesRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
-	fmt.Println(config)
+	config.client.Ipam.IpamIPAddressesList()
 	return nil
 }
 
