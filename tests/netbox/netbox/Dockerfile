@@ -20,10 +20,19 @@ RUN groupadd --system netbox && \
     adduser --system --gid netbox netbox && \
     chown --recursive netbox /opt/netbox/netbox/media/
 
-RUN pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple virtualenv && \
+RUN curl -s http://pki.blizzard.net/pki/blizzardroot.pem -o /etc/pki/ca-trust/source/anchors/blizzardroot.crt
+RUN curl -s http://pki.blizzard.net/pki/BlizzardCA01.pem -o /etc/pki/ca-trust/source/anchors/BlizzardCA01.crt
+RUN update-ca-trust extract
+
+#RUN pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple virtualenv && \
+#    python3 -m virtualenv --python=/usr/bin/python3 /opt/netbox/venv
+#
+#RUN /opt/netbox/venv/bin/pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r /opt/netbox/requirements.txt
+
+RUN pip3 install -i http://pip.battle.net:6081/api/pypi/pip-virtual/simple --trusted-host pip.battle.net virtualenv && \
     python3 -m virtualenv --python=/usr/bin/python3 /opt/netbox/venv
 
-RUN /opt/netbox/venv/bin/pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r /opt/netbox/requirements.txt
+RUN /opt/netbox/venv/bin/pip install -i http://pip.battle.net:6081/api/pypi/pip-virtual/simple --trusted-host pip.battle.net -r /opt/netbox/requirements.txt
 
 
 RUN  cp ./configuration.py /opt/netbox/netbox/netbox/
