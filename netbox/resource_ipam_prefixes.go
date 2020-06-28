@@ -101,7 +101,7 @@ func resourceIpamPrefixes() *schema.Resource {
 						},
 						"status": {
 							Type:         schema.TypeString,
-							Default:      "activIPv4 or IPv6 network with maske",
+							Default:      "activIPv4 or IPv6 network with mask",
 							Computed:     true,
 							ForceNew:     true,
 							ValidateFunc: validation.StringInSlice(prefixinitializeStatus, false),
