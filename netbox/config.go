@@ -1,8 +1,6 @@
 package netbox
 
 import (
-	//"fmt"
-
 	"context"
 	"fmt"
 	"log"
@@ -37,11 +35,13 @@ type Config struct {
 }
 
 func (c *Config) LoadAndValidate(ctx context.Context) error {
-
 	if c.BasePath == "" {
 		c.BasePath = NetboxDefaultBasePath
 	}
 
+	if c.BasePath == "" {
+		c.BasePath = NetboxDefaultBasePath
+	}
 	if c.Host == "" {
 		c.Host = NetboxDefaultHost
 	}

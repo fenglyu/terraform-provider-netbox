@@ -13,6 +13,10 @@ import (
 	"time"
 )
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> fix conflict
 func resourceIpamPrefixes() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceIpamPrefixesCreate,
@@ -130,6 +134,7 @@ func resourceIpamPrefixesCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceIpamPrefixesRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
+<<<<<<< HEAD
 
 	prefix, err := getIpamPrefix(config, d)
 	if err != nil || prefix == nil {
@@ -151,6 +156,9 @@ func resourceIpamPrefixesRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("created", prefix.Created)
 	d.Set("created", prefix.Created)
 
+=======
+	//config.client.Ipam.IpamIPAddressesList()
+>>>>>>> fix conflict
 	return nil
 }
 
