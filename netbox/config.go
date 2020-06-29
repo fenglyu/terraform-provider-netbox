@@ -18,6 +18,10 @@ var (
 	NetboxDefaultBasePath = "/api"
 	AuthHeaderName        = "Authorization"
 	AuthHeaderFormat      = "Token %v"
+
+	prefixinitializeStatus = []string{
+		"container", "active", "reserved", "deprecated",
+	}
 )
 
 // Config support all configurations for provider
