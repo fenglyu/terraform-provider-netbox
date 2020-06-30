@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/fenglyu/go-netbox/netbox/client/ipam"
 	"github.com/fenglyu/go-netbox/netbox/models"
+	"log"
 	"strconv"
 
 	//"fmt"
@@ -126,34 +127,105 @@ func resourceIpamPrefixes() *schema.Resource {
 
 func resourceIpamPrefixesCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
-	var Description string
-	if desc, ok := d.GetOk("description"); ok {
-		Description = desc.(string)
+
+	var id int64
+	if idstr, ok := d.GetOk("id"); ok {
+		id = idstr.(int64)
 	}
-	var CustomFields interface{}
-	cf, ok :=d.GetOk("custom_fields"); ok {
-		CustomFields = cf.(string)
+
+	var family string
+	if familyData, ok := d.GetOk("family"); ok {
+		family = familyData.(string)
+	}
+
+	var prefix string
+	if pfix, ok := d.GetOk("prefix"); ok {
+		prefix = pfix.(string)
+	}
+
+	var prefixlength int64
+	if pl, ok := d.GetOk("prefix_length"); ok {
+		prefixlength = pl.(int64)
+	}
+
+	var site int64
+	if siteData, ok := d.GetOk("site"); ok {
+		site = siteData.(int64)
+	}
+
+	var vrf int64
+	if vrfData, ok := d.GetOk("vrf"); ok {
+		vrf = vrfData.(int64)
+	}
+	var tenant int64
+	if tenantData, ok := d.GetOk("tenant"); ok {
+		tenant = tenantData.(int64)
+	}
+	var vlan int64
+	if vlanData, ok := d.GetOk("vlan"); ok {
+		vlan = vlanData.(int64)
+	}
+
+	var status string
+	if statusData, ok := d.GetOk("status"); ok {
+		status = statusData.(string)
+	}
+
+	var role int64
+	if roleData, ok := d.GetOk("role"); ok {
+		role = roleData.(int64)
 	}
 
 	var IsPool bool
-	ipool, ok := d.GetOK("is_pool"); ok {
-		IsPool = ipool.(bool)
+	if isPoolData, ok := d.GetOk("is_pool"); ok {
+		IsPool = isPoolData.(bool)
 	}
 
-	var Prefix string
-	pfix, ok :=d.GetOk("prefix"); ok {
-		Prefix = pfix.(string)
+	var description string
+	if desc, ok := d.GetOk("description"); ok {
+		description = desc.(string)
 	}
 
-	var Site string
-	site, ok :=d.GetOk("site"); ok {
-		Site = site.(string)
+	var tags []string
+	if tagsData, ok := d.GetOk("tags"); ok {
+		tags = tagsData.([]string)
 	}
 
-	var Vlan int
-	site, ok :=d.GetOk("vlan"); ok {
-		Site = site.(string)
+	var customFields interface{}
+	if cfData, ok := d.GetOk("custom_fields"); ok {
+		customFields = cfData.(string)
 	}
+
+	wPrefix := models.WritablePrefix{
+		Family:       family,
+		Prefix:       &prefix,
+		PrefixLength: prefixlength,
+		Site:         &site,
+		Vrf:          &vrf,
+		Tenant:       &tenant,
+		Vlan:         &vlan,
+		Status:       status,
+		Role:         &role,
+		IsPool:       IsPool,
+		Description:  description,
+		Tags:         tags,
+		CustomFields: customFields,
+	}
+	param := ipam.IpamPrefixesAvailablePrefixesCreateParams{
+		ID:   id,
+		Data: &wPrefix,
+	}
+
+	log.Printf("[INFO] Requesting AvaliablePrefix creation")
+	res, err := config.client.Ipam.IpamPrefixesAvailablePrefixesCreate(&param, nil)
+	if err != nil {
+		// The resource didn't actually create
+		d.SetId("")
+		return err
+	}
+	availablePrefix := res.GetPayload()
+
+	d.SetId(fmt.Sprintf("%s", availablePrefix.ID))
 
 	return resourceIpamPrefixesRead(d, m)
 }
@@ -166,9 +238,12 @@ func resourceIpamPrefixesRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	d.Set("id", prefix.ID)
+	//d.Set("id", prefix.ID)
 	d.Set("description", prefix.Description)
-	d.Set("custom_fields", prefix.CustomFields)
+
+	if err := d.Set("custom_fields", prefix.CustomFields); err != nil {
+		return err
+	}
 	d.Set("is_pool", prefix.IsPool)
 	d.Set("created", prefix.Created)
 	d.Set("family", flatternFamily(prefix.Family))
@@ -182,12 +257,35 @@ func resourceIpamPrefixesRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("vlan", flatternNestedVLAN(prefix.Vlan))
 	d.Set("vrf", flatternNestedVRF(prefix.Vrf))
 
-	d.SetId(fmt.Sprintf("id_%s_prefix_%s", prefix.ID, prefix.Prefix))
-
 	return nil
 }
 
 func resourceIpamPrefixesUpdate(d *schema.ResourceData, m interface{}) error {
+	config := m.(*Config)
+
+	id, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return err
+	}
+
+	prefix, err := getIpamPrefix(config, d)
+	if err != nil {
+		return err
+	}
+	wp, err := getWritePrefixFromPrefix(prefix)
+	if err != nil {
+		return err
+	}
+	if d.HasChange("prefix") && !d.IsNewResource() {
+		o, n := d.GetChange("prefix")
+		wp.Prefix = n.(string)
+	}
+
+	if d.HasChange("site") && !d.IsNewResource() {
+		o, n := d.GetChange("site")
+		prefix.Site = n
+	}
+
 	return resourceIpamPrefixesRead(d, m)
 }
 
@@ -196,11 +294,13 @@ func resourceIpamPrefixesDelete(d *schema.ResourceData, m interface{}) error {
 }
 
 func getIpamPrefix(config *Config, d *schema.ResourceData) (*models.Prefix, error) {
-	idStr, err := getID(config, d)
-	if err != nil {
-		return nil, err
-	}
-	id, err := strconv.Atoi(idStr)
+	/*
+		idStr, err := getID(config, d)
+		if err != nil {
+			return nil, err
+		}
+	*/
+	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return nil, err
 	}
@@ -215,12 +315,55 @@ func getIpamPrefix(config *Config, d *schema.ResourceData) (*models.Prefix, erro
 	return prefix.Payload, nil
 }
 
+func getWritePrefixFromPrefix(p *models.Prefix) (*models.WritablePrefix, error) {
+	if p == nil {
+		return nil, fmt.Errorf("nil pointer")
+	}
+	var wp models.WritablePrefix
+	if p.Prefix != nil {
+		wp.Prefix = p.Prefix
+	}
+	if p.Family != nil {
+		wp.Family = *p.Family.Label
+	}
+	if p.Site != nil {
+		wp.Site = &p.Site.ID
+	}
+	if p.Vrf != nil {
+		wp.Vrf = &p.Vrf.ID
+	}
+	if p.Vlan != nil {
+		wp.Vlan = &p.Vlan.ID
+	}
+	if p.Tenant != nil {
+		wp.Tenant = &p.Tenant.ID
+	}
+	if p.Status != nil {
+		wp.Status = *p.Status.Label
+	}
+	if p.Role != nil {
+		wp.Role = &p.Role.ID
+	}
+
+	wp.IsPool = p.IsPool
+	wp.Description = p.Description
+	wp.Tags = p.Tags
+	wp.CustomFields = p.CustomFields
+
+	return &wp, nil
+}
+
 func getIpamPrefixes(config *Config, d *schema.ResourceData) ([]*models.Prefix, error) {
-	id, err := getID(config, d)
+	/*
+		id, err := getID(config, d)
+		if err != nil {
+			return nil, err
+		}
+	*/
+	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return nil, err
 	}
-
 	prefix, err := getPrefix(config, d)
 	if err != nil {
 		return nil, err
