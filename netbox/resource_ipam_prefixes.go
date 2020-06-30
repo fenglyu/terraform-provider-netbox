@@ -13,7 +13,6 @@ import (
 	"time"
 )
 
-
 func resourceIpamPrefixes() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceIpamPrefixesCreate,
@@ -126,12 +125,41 @@ func resourceIpamPrefixes() *schema.Resource {
 }
 
 func resourceIpamPrefixesCreate(d *schema.ResourceData, m interface{}) error {
+	config := m.(*Config)
+	var Description string
+	if desc, ok := d.GetOk("description"); ok {
+		Description = desc.(string)
+	}
+	var CustomFields interface{}
+	cf, ok :=d.GetOk("custom_fields"); ok {
+		CustomFields = cf.(string)
+	}
+
+	var IsPool bool
+	ipool, ok := d.GetOK("is_pool"); ok {
+		IsPool = ipool.(bool)
+	}
+
+	var Prefix string
+	pfix, ok :=d.GetOk("prefix"); ok {
+		Prefix = pfix.(string)
+	}
+
+	var Site string
+	site, ok :=d.GetOk("site"); ok {
+		Site = site.(string)
+	}
+
+	var Vlan int
+	site, ok :=d.GetOk("vlan"); ok {
+		Site = site.(string)
+	}
+
 	return resourceIpamPrefixesRead(d, m)
 }
 
 func resourceIpamPrefixesRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
-
 
 	prefix, err := getIpamPrefix(config, d)
 	if err != nil || prefix == nil {
@@ -144,17 +172,17 @@ func resourceIpamPrefixesRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("is_pool", prefix.IsPool)
 	d.Set("created", prefix.Created)
 	d.Set("family", flatternFamily(prefix.Family))
+	d.Set("role", flatternRole(prefix.Role))
+	d.Set("last_updated", prefix.LastUpdated.String())
 	d.Set("prefix", prefix.Prefix)
-	d.Set("role", prefix.Created)
-	d.Set("created", prefix.Created)
-	d.Set("created", prefix.Created)
-	d.Set("created", prefix.Created)
-	d.Set("created", prefix.Created)
-	d.Set("created", prefix.Created)
-	d.Set("created", prefix.Created)
+	d.Set("site", flatternSite(prefix.Site))
+	d.Set("status", flatterPrefixStatus(prefix.Status))
+	d.Set("tags", prefix.Tags)
+	d.Set("tenant", flatternNestedTenant(prefix.Tenant))
+	d.Set("vlan", flatternNestedVLAN(prefix.Vlan))
+	d.Set("vrf", flatternNestedVRF(prefix.Vrf))
 
-
-	//config.client.Ipam.IpamIPAddressesList()
+	d.SetId(fmt.Sprintf("id_%s_prefix_%s", prefix.ID, prefix.Prefix))
 
 	return nil
 }
@@ -215,34 +243,6 @@ func getIpamPrefixes(config *Config, d *schema.ResourceData) ([]*models.Prefix, 
 	}
 
 	return ipamPrefixListBody.Payload.Results, nil
-}
-
-func flatternFamily(f *models.PrefixFamily) []map[string]interface{} {
-	if f == nil {
-		return nil
-	}
-	return []map[string]interface{}{{
-		"label": f.Label,
-		"value": f.Value,
-	}}
-}
-
-// TODO
-func flatternNestedRole(nr *models.NestedRole) []map[string]interface{} {
-	return nil
-}
-
-func flattenPrefixes(prefixesList []*models.Prefix) ([]map[string]interface{}, error) {
-	flattened := make([]map[string]interface{}, len(prefixesList))
-
-	for i, prefix := range prefixesList {
-		flattened[i] = map[string]interface{}{
-			"description":   prefix.Description,
-			"custom_fields": prefix.CustomFields,
-			"is_pool":       prefix.IsPool,
-		}
-	}
-	return nil, nil
 }
 
 func getPrefix(config *Config, d *schema.ResourceData) (string, error) {
