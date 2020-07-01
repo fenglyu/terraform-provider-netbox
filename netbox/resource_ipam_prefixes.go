@@ -6,6 +6,7 @@ import (
 	"github.com/fenglyu/go-netbox/netbox/models"
 	"log"
 	"strconv"
+	"strings"
 
 	//"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -120,7 +121,6 @@ func resourceIpamPrefixes() *schema.Resource {
 				},
 			},
 		},
-
 		//	CustomizeDiff: nil,
 	}
 }
@@ -262,44 +262,64 @@ func resourceIpamPrefixesRead(d *schema.ResourceData, m interface{}) error {
 
 func resourceIpamPrefixesUpdate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
-
-	id, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return err
-	}
-
-	prefix, err := getIpamPrefix(config, d)
-	if err != nil {
-		return err
-	}
-	wp, err := getWritePrefixFromPrefix(prefix)
-	if err != nil {
-		return err
-	}
 	if d.HasChange("prefix") && !d.IsNewResource() {
-		o, n := d.GetChange("prefix")
-		wp.Prefix = n.(string)
+		return ipamPrefixesPartialUpdate(config, d, "prefix")
 	}
-
 	if d.HasChange("site") && !d.IsNewResource() {
-		o, n := d.GetChange("site")
-		prefix.Site = n
+		return ipamPrefixesPartialUpdate(config, d, "site")
 	}
-
+	if d.HasChange("vrf") && !d.IsNewResource() {
+		return ipamPrefixesPartialUpdate(config, d, "vrf")
+	}
+	if d.HasChange("tenant") && !d.IsNewResource() {
+		return ipamPrefixesPartialUpdate(config, d, "tenant")
+	}
+	if d.HasChange("vlan") && !d.IsNewResource() {
+		return ipamPrefixesPartialUpdate(config, d, "vlan")
+	}
+	if d.HasChange("status") && !d.IsNewResource() {
+		return ipamPrefixesPartialUpdate(config, d, "status")
+	}
+	if d.HasChange("role") && !d.IsNewResource() {
+		return ipamPrefixesPartialUpdate(config, d, "role")
+	}
+	if d.HasChange("is_pool") && !d.IsNewResource() {
+		return ipamPrefixesPartialUpdate(config, d, "is_pool")
+	}
+	if d.HasChange("description") && !d.IsNewResource() {
+		return ipamPrefixesPartialUpdate(config, d, "description")
+	}
+	if d.HasChange("tags") && !d.IsNewResource() {
+		return ipamPrefixesPartialUpdate(config, d, "tags")
+	}
+	if d.HasChange("custom_fields") && !d.IsNewResource() {
+		return ipamPrefixesPartialUpdate(config, d, "custom_fields")
+	}
 	return resourceIpamPrefixesRead(d, m)
 }
 
 func resourceIpamPrefixesDelete(d *schema.ResourceData, m interface{}) error {
+	config := m.(*Config)
+
+	log.Printf("[INFO]Requesting Prefix deletion: %s", d.Get("prefix").(string))
+	id, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return err
+	}
+	param := ipam.IpamPrefixesDeleteParams{
+		ID: int64(id),
+	}
+	_, derr := config.client.Ipam.IpamPrefixesDelete(&param, nil)
+	if derr != nil {
+		return derr
+	}
+
+	d.SetId("")
 	return nil
 }
 
 func getIpamPrefix(config *Config, d *schema.ResourceData) (*models.Prefix, error) {
-	/*
-		idStr, err := getID(config, d)
-		if err != nil {
-			return nil, err
-		}
-	*/
+
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
 		return nil, err
@@ -308,14 +328,14 @@ func getIpamPrefix(config *Config, d *schema.ResourceData) (*models.Prefix, erro
 		ID: int64(id),
 	}
 
-	prefix, err := config.client.Ipam.IpamPrefixesRead(&params, nil)
-	if err != nil || prefix == nil {
+	ipamPrefixesReadOK, err := config.client.Ipam.IpamPrefixesRead(&params, nil)
+	if err != nil || ipamPrefixesReadOK == nil {
 		return nil, fmt.Errorf("Cannot determine prefix with ID %s", id)
 	}
-	return prefix.Payload, nil
+	return ipamPrefixesReadOK.Payload, nil
 }
 
-func getWritePrefixFromPrefix(p *models.Prefix) (*models.WritablePrefix, error) {
+func convertPrefixToWritePrefix(p *models.Prefix) (*models.WritablePrefix, error) {
 	if p == nil {
 		return nil, fmt.Errorf("nil pointer")
 	}
@@ -354,16 +374,7 @@ func getWritePrefixFromPrefix(p *models.Prefix) (*models.WritablePrefix, error) 
 }
 
 func getIpamPrefixes(config *Config, d *schema.ResourceData) ([]*models.Prefix, error) {
-	/*
-		id, err := getID(config, d)
-		if err != nil {
-			return nil, err
-		}
-	*/
-	id, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return nil, err
-	}
+
 	prefix, err := getPrefix(config, d)
 	if err != nil {
 		return nil, err
@@ -371,8 +382,9 @@ func getIpamPrefixes(config *Config, d *schema.ResourceData) ([]*models.Prefix, 
 
 	//var limit int64 = 1
 	// Compose Parameters for GET: /ipam/prefixes/
+	idStr := d.Id()
 	param := ipam.IpamPrefixesListParams{
-		ID:     &id,
+		ID:     &idStr,
 		Prefix: &prefix,
 		//Limit:  &limit,
 	}
@@ -382,7 +394,7 @@ func getIpamPrefixes(config *Config, d *schema.ResourceData) ([]*models.Prefix, 
 	}
 
 	if ipamPrefixListBody != nil || *ipamPrefixListBody.Payload.Count < 1 {
-		return nil, fmt.Errorf("Unknow prefix %s with ID %s, not found", prefix, id)
+		return nil, fmt.Errorf("Unknow prefix %s with ID %s, not found", prefix, d.Id())
 	}
 
 	return ipamPrefixListBody.Payload.Results, nil
@@ -392,16 +404,76 @@ func getPrefix(config *Config, d *schema.ResourceData) (string, error) {
 	return getAttrFromSchema("prefix", d, config)
 }
 
-func getID(config *Config, d *schema.ResourceData) (string, error) {
-	return getAttrFromSchema("id", d, config)
-}
-
 func getAttrFromSchema(resourceSchemaField string, d *schema.ResourceData, config *Config) (string, error) {
 	res, ok := d.GetOk(resourceSchemaField)
 	if !ok {
 		return "", fmt.Errorf("Cannot determine %s: set in this resource", resourceSchemaField)
 	}
 	return res.(string), nil
+}
+
+func ipamPrefixesPartialUpdate(config *Config, d *schema.ResourceData, key string) error {
+
+	var writablePrefix models.WritablePrefix
+	switch key {
+	case "prefix":
+		prefixData := d.Get("prefix").(string)
+		writablePrefix.Prefix = &prefixData
+	case "site":
+		siteId := d.Get("site").(int64)
+		writablePrefix.Site = &siteId
+	case "vrf":
+		vrfData := d.Get("vrf").(int64)
+		writablePrefix.Vrf = &vrfData
+	case "tenant":
+		tenantData := d.Get("tenant").(int64)
+		writablePrefix.Tenant = &tenantData
+	case "vlan":
+		vlanData := d.Get("vlan").(int64)
+		writablePrefix.Vlan = &vlanData
+	case "status":
+		statusData := d.Get("status").(string)
+		flag := false
+		for _, str := range prefixinitializeStatus {
+			if statusData == str || (strings.ToLower(statusData) == strings.ToLower(str)) {
+				flag = true
+			}
+		}
+		if !flag {
+			return fmt.Errorf("Not a valid status in %v", prefixinitializeStatus)
+		}
+		writablePrefix.Status = strings.ToLower(statusData)
+	case "role":
+		roleData := d.Get("role").(int64)
+		writablePrefix.Role = &roleData
+	case "is_pool":
+		isPoolData := d.Get("is_pool").(bool)
+		writablePrefix.IsPool = isPoolData
+	case "description":
+		descriptionData := d.Get("description").(string)
+		writablePrefix.Description = descriptionData
+	case "tags":
+		tagsData := d.Get("tags").([]string)
+		writablePrefix.Tags = tagsData
+	case "custom_fields":
+		cfData := d.Get("custom_fields")
+		writablePrefix.CustomFields = cfData
+	}
+
+	id, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return err
+	}
+	partialUpdatePrefix := ipam.IpamPrefixesPartialUpdateParams{
+		ID:   int64(id),
+		Data: &writablePrefix,
+	}
+	_, uerr := config.client.Ipam.IpamPrefixesPartialUpdate(&partialUpdatePrefix, nil)
+	if uerr != nil {
+		return uerr
+	}
+
+	return nil
 }
 
 /*
