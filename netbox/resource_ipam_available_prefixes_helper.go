@@ -2,6 +2,7 @@ package netbox
 
 import (
 	"github.com/fenglyu/go-netbox/netbox/models"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func flatternFamily(f *models.PrefixFamily) []map[string]interface{} {
@@ -83,4 +84,31 @@ func flattenPrefixes(prefixesList []*models.Prefix) ([]map[string]interface{}, e
 		}
 	}
 	return nil, nil
+}
+
+func flattenCustomFields(p *models.Prefix) map[string]string {
+	cf := p.CustomFields.(map[string]interface{})
+	cfMap := make(map[string]string)
+	for k, v := range cf {
+		cfMap[k] = v.(string)
+	}
+	return cfMap
+}
+
+func expandStringMap(d *schema.ResourceData, key string) map[string]string {
+	v, ok := d.GetOk(key)
+
+	if !ok {
+		return map[string]string{}
+	}
+
+	return convertStringMap(v.(map[string]interface{}))
+}
+
+func convertStringMap(v map[string]interface{}) map[string]string {
+	m := make(map[string]string)
+	for k, val := range v {
+		m[k] = val.(string)
+	}
+	return m
 }

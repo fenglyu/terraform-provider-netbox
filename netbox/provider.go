@@ -37,11 +37,11 @@ func Provider() terraform.ResourceProvider {
 				Optional: true,
 			},
 		},
-
-		DataSourcesMap: map[string]*schema.Resource{
-			"ipam_available_prefixes": dataSourceIpamPrefixes(),
-		},
-
+		/*
+			DataSourcesMap: map[string]*schema.Resource{
+				"ipam_available_prefixes": dataSourceIpamPrefixes(),
+			},
+		*/
 		ResourcesMap: ResourceMap(),
 	}
 
@@ -59,7 +59,7 @@ func Provider() terraform.ResourceProvider {
 
 func ResourceMap() map[string]*schema.Resource {
 	return map[string]*schema.Resource{
-		"ipam_available_prefixes": resourceIpamPrefixes(),
+		"netbox_available_prefixes": resourceIpamPrefixes(),
 		//"ipam_prefixes_available_ips":
 	}
 }

@@ -1,6 +1,8 @@
 package netbox
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/fenglyu/go-netbox/netbox/client/ipam"
 	"github.com/fenglyu/go-netbox/netbox/models"
@@ -30,95 +32,110 @@ func resourceIpamPrefixes() *schema.Resource {
 		// TODO after test coverage finished
 		//MigrateState:
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(10 * time.Minute),
-			Update: schema.DefaultTimeout(10 * time.Minute),
-			Delete: schema.DefaultTimeout(10 * time.Minute),
+			Create:  schema.DefaultTimeout(10 * time.Minute),
+			Update:  schema.DefaultTimeout(10 * time.Minute),
+			Delete:  schema.DefaultTimeout(10 * time.Minute),
+			Default: schema.DefaultTimeout(10 * time.Minute),
 		},
+		/*
+			Schema: map[string]*schema.Schema{
+				"prefix": {
+					Type:         schema.TypeString,
+					Optional:     true,
+					ValidateFunc: validation.IsCIDRNetwork(8, 32),
+					Description:  "crave available prefix under the prefix",
+				},
+				"prefix_id": {
+					Type:         schema.TypeInt,
+					Optional:     true,
+					ValidateFunc: validation.IntAtLeast(0),
+					Description:  "A unique integer value identifying this prefix under which is used crave available prefix",
+				},
 
+				"available_prefixes": {
+					Type:        schema.TypeList,
+					Required:    true,
+					ForceNew:    true,
+					Description: "The IPAM prefix in netbox",
+					Elem: &schema.Resource{
+		*/
 		Schema: map[string]*schema.Schema{
 			"prefix": {
-				Type:        schema.TypeList,
-				Required:    true,
-				ForceNew:    true,
-				Description: "The IPAM prefix in netbox",
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"id": {
-							Type:         schema.TypeInt,
-							Optional:     true,
-							ForceNew:     true,
-							ValidateFunc: validation.IntAtLeast(0),
-							Description:  "The unique ID of prefix",
-						},
-						"prefix": {
-							Type:         schema.TypeString,
-							Required:     true,
-							ForceNew:     true,
-							ValidateFunc: validation.IsCIDRNetwork(8, 32),
-							Description:  "IPv4 or IPv6 network with mask",
-						},
-
-						"role": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							ForceNew:    true,
-							Description: "The primary function of this prefix  ",
-						},
-						"site": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							ForceNew:    true,
-							Description: "Site",
-						},
-						"tags": {
-							Type:        schema.TypeList,
-							Optional:    true,
-							ForceNew:    true,
-							Description: "tags",
-						},
-						"tenant": {
-							Type:        schema.TypeInt,
-							Optional:    true,
-							ForceNew:    true,
-							Description: "Tenant",
-						},
-						"vlan": {
-							Type:        schema.TypeInt,
-							Optional:    true,
-							ForceNew:    true,
-							Description: "VLAN",
-						},
-						"vrf": {
-							Type:        schema.TypeInt,
-							Optional:    true,
-							ForceNew:    true,
-							Description: "VRF",
-						},
-						"ispool": {
-							Type:        schema.TypeBool,
-							Optional:    true,
-							Default:     false,
-							ForceNew:    true,
-							Description: "All IP addresses within this prefix are considered usable",
-						},
-						"status": {
-							Type:         schema.TypeString,
-							Default:      "activIPv4 or IPv6 network with mask",
-							Computed:     true,
-							ForceNew:     true,
-							ValidateFunc: validation.StringInSlice(prefixinitializeStatus, false),
-							Description:  "Operational status of this prefix",
-						},
-						"description": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							Computed:     true,
-							ForceNew:     true,
-							ValidateFunc: validation.StringLenBetween(0, 200),
-							Description:  "Describe the purpose of this prefix",
-						},
-					},
-				},
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.IsCIDRNetwork(8, 32),
+				Description:  "crave available prefix under the prefix",
+			},
+			"prefix_id": {
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ValidateFunc: validation.IntAtLeast(0),
+				Description:  "A unique integer value identifying this prefix under which is used crave available prefix",
+			},
+			"prefix_length": {
+				Type:         schema.TypeInt,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.IntBetween(1, 128),
+				Description:  "The netmask in number form",
+			},
+			"role": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "The primary function of this prefix  ",
+			},
+			"site": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Site",
+			},
+			"tags": {
+				Type:        schema.TypeSet,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Set:         schema.HashString,
+				Optional:    true,
+				Description: `The list of tags attached to the available prefix.`,
+			},
+			"tenant": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "Tenant",
+			},
+			"vlan": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "VLAN",
+			},
+			"vrf": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Description: "VRF",
+			},
+			"ispool": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "All IP addresses within this prefix are considered usable",
+			},
+			"status": {
+				Type:         schema.TypeString,
+				Default:      "active",
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringInSlice(prefixinitializeStatus, false),
+				Description:  "Operational status of this prefix",
+			},
+			"description": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringLenBetween(0, 200),
+				Description:  "Describe the purpose of this prefix",
+			},
+			"custom_fields": {
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Description: "Custom fields",
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 		},
 		//	CustomizeDiff: nil,
@@ -128,104 +145,105 @@ func resourceIpamPrefixes() *schema.Resource {
 func resourceIpamPrefixesCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
-	var id int64
-	if idstr, ok := d.GetOk("id"); ok {
-		id = idstr.(int64)
-	}
+	wPrefix := models.WritablePrefix{}
 
-	var family string
-	if familyData, ok := d.GetOk("family"); ok {
-		family = familyData.(string)
+	var prefix_id int64
+	if pfx_id, ok := d.GetOk("prefix_id"); ok {
+		prefix_id = int64(pfx_id.(int))
+		//wPrefix.ID = prefix_id
 	}
 
 	var prefix string
 	if pfix, ok := d.GetOk("prefix"); ok {
 		prefix = pfix.(string)
+		wPrefix.Prefix = &prefix
 	}
 
 	var prefixlength int64
 	if pl, ok := d.GetOk("prefix_length"); ok {
-		prefixlength = pl.(int64)
+		prefixlength = int64(pl.(int))
+		wPrefix.PrefixLength = prefixlength
 	}
 
 	var site int64
 	if siteData, ok := d.GetOk("site"); ok {
-		site = siteData.(int64)
+		site = int64(siteData.(int))
+		wPrefix.Site = &site
 	}
 
 	var vrf int64
 	if vrfData, ok := d.GetOk("vrf"); ok {
-		vrf = vrfData.(int64)
+		vrf = int64(vrfData.(int))
+		wPrefix.Vrf = &vrf
 	}
 	var tenant int64
 	if tenantData, ok := d.GetOk("tenant"); ok {
-		tenant = tenantData.(int64)
+		tenant = int64(tenantData.(int))
+		wPrefix.Tenant = &tenant
 	}
 	var vlan int64
 	if vlanData, ok := d.GetOk("vlan"); ok {
-		vlan = vlanData.(int64)
+		vlan = int64(vlanData.(int))
+		wPrefix.Vlan = &vlan
 	}
 
 	var status string
 	if statusData, ok := d.GetOk("status"); ok {
 		status = statusData.(string)
+		wPrefix.Status = status
 	}
 
 	var role int64
 	if roleData, ok := d.GetOk("role"); ok {
-		role = roleData.(int64)
+		role = int64(roleData.(int))
+		wPrefix.Role = &role
 	}
 
 	var IsPool bool
 	if isPoolData, ok := d.GetOk("is_pool"); ok {
 		IsPool = isPoolData.(bool)
+		wPrefix.IsPool = IsPool
 	}
 
 	var description string
 	if desc, ok := d.GetOk("description"); ok {
 		description = desc.(string)
+		wPrefix.Description = description
 	}
 
 	var tags []string
 	if tagsData, ok := d.GetOk("tags"); ok {
 		tags = tagsData.([]string)
+		wPrefix.Tags = tags
 	}
 
 	var customFields interface{}
 	if cfData, ok := d.GetOk("custom_fields"); ok {
-		customFields = cfData.(string)
-	}
-
-	wPrefix := models.WritablePrefix{
-		Family:       family,
-		Prefix:       &prefix,
-		PrefixLength: prefixlength,
-		Site:         &site,
-		Vrf:          &vrf,
-		Tenant:       &tenant,
-		Vlan:         &vlan,
-		Status:       status,
-		Role:         &role,
-		IsPool:       IsPool,
-		Description:  description,
-		Tags:         tags,
-		CustomFields: customFields,
+		customFields = cfData.(map[string]string)
+		wPrefix.CustomFields = customFields
 	}
 	param := ipam.IpamPrefixesAvailablePrefixesCreateParams{
-		ID:   id,
+		ID:   int64(prefix_id),
 		Data: &wPrefix,
 	}
+	param.WithContext(context.Background())
+
+	log.Println("wprefix: ", wPrefix)
+	jsonParam, _ := json.Marshal(param)
+	log.Println("param: ", string(jsonParam))
+	param.WithContext(context.Background())
 
 	log.Printf("[INFO] Requesting AvaliablePrefix creation")
 	res, err := config.client.Ipam.IpamPrefixesAvailablePrefixesCreate(&param, nil)
 	if err != nil {
 		// The resource didn't actually create
+		log.Fatalln("[Error] Failed to create AvaliablePrefix: ", err)
 		d.SetId("")
 		return err
 	}
 	availablePrefix := res.GetPayload()
 
-	d.SetId(fmt.Sprintf("%s", availablePrefix.ID))
+	d.SetId(fmt.Sprintf("%d", availablePrefix.ID))
 
 	return resourceIpamPrefixesRead(d, m)
 }
@@ -241,21 +259,39 @@ func resourceIpamPrefixesRead(d *schema.ResourceData, m interface{}) error {
 	//d.Set("id", prefix.ID)
 	d.Set("description", prefix.Description)
 
-	if err := d.Set("custom_fields", prefix.CustomFields); err != nil {
+	if err := d.Set("custom_fields", flattenCustomFields(prefix)); err != nil {
 		return err
 	}
 	d.Set("is_pool", prefix.IsPool)
 	d.Set("created", prefix.Created)
-	d.Set("family", flatternFamily(prefix.Family))
-	d.Set("role", flatternRole(prefix.Role))
+	if prefix != nil && prefix.Family != nil {
+		d.Set("family", flatternFamily(prefix.Family))
+	}
+	if prefix != nil && prefix.Role != nil {
+		d.Set("role", flatternRole(prefix.Role))
+	}
 	d.Set("last_updated", prefix.LastUpdated.String())
 	d.Set("prefix", prefix.Prefix)
-	d.Set("site", flatternSite(prefix.Site))
-	d.Set("status", flatterPrefixStatus(prefix.Status))
+	d.Set("prefix_length", prefix.PrefixLength)
+	if prefix != nil && prefix.Site != nil {
+		d.Set("site", flatternSite(prefix.Site))
+	}
+	if prefix != nil && prefix.Status != nil {
+		d.Set("status", flatterPrefixStatus(prefix.Status))
+	}
+
 	d.Set("tags", prefix.Tags)
-	d.Set("tenant", flatternNestedTenant(prefix.Tenant))
-	d.Set("vlan", flatternNestedVLAN(prefix.Vlan))
-	d.Set("vrf", flatternNestedVRF(prefix.Vrf))
+
+	if prefix != nil && prefix.Tenant != nil {
+		d.Set("tenant", flatternNestedTenant(prefix.Tenant))
+	}
+	if prefix != nil && prefix.Vlan != nil {
+		d.Set("vlan", flatternNestedVLAN(prefix.Vlan))
+	}
+
+	if prefix != nil && prefix.Vrf != nil {
+		d.Set("vrf", flatternNestedVRF(prefix.Vrf))
+	}
 
 	return nil
 }
@@ -264,6 +300,9 @@ func resourceIpamPrefixesUpdate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 	if d.HasChange("prefix") && !d.IsNewResource() {
 		return ipamPrefixesPartialUpdate(config, d, "prefix")
+	}
+	if d.HasChange("prefix_length") && !d.IsNewResource() {
+		return ipamPrefixesPartialUpdate(config, d, "prefix_length")
 	}
 	if d.HasChange("site") && !d.IsNewResource() {
 		return ipamPrefixesPartialUpdate(config, d, "site")
@@ -306,10 +345,11 @@ func resourceIpamPrefixesDelete(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	param := ipam.IpamPrefixesDeleteParams{
+	params := ipam.IpamPrefixesDeleteParams{
 		ID: int64(id),
 	}
-	_, derr := config.client.Ipam.IpamPrefixesDelete(&param, nil)
+	params.WithContext(context.Background())
+	_, derr := config.client.Ipam.IpamPrefixesDelete(&params, nil)
 	if derr != nil {
 		return derr
 	}
@@ -327,10 +367,11 @@ func getIpamPrefix(config *Config, d *schema.ResourceData) (*models.Prefix, erro
 	params := ipam.IpamPrefixesReadParams{
 		ID: int64(id),
 	}
+	params.WithContext(context.Background())
 
 	ipamPrefixesReadOK, err := config.client.Ipam.IpamPrefixesRead(&params, nil)
 	if err != nil || ipamPrefixesReadOK == nil {
-		return nil, fmt.Errorf("Cannot determine prefix with ID %s", id)
+		return nil, fmt.Errorf("Cannot determine prefix with ID %d", id)
 	}
 	return ipamPrefixesReadOK.Payload, nil
 }
@@ -419,6 +460,9 @@ func ipamPrefixesPartialUpdate(config *Config, d *schema.ResourceData, key strin
 	case "prefix":
 		prefixData := d.Get("prefix").(string)
 		writablePrefix.Prefix = &prefixData
+	case "prefix_length":
+		prefixLengthData := d.Get("prefix_length").(int64)
+		writablePrefix.PrefixLength = prefixLengthData
 	case "site":
 		siteId := d.Get("site").(int64)
 		writablePrefix.Site = &siteId
@@ -456,7 +500,7 @@ func ipamPrefixesPartialUpdate(config *Config, d *schema.ResourceData, key strin
 		tagsData := d.Get("tags").([]string)
 		writablePrefix.Tags = tagsData
 	case "custom_fields":
-		cfData := d.Get("custom_fields")
+		cfData := d.Get("custom_fields").(map[string]string)
 		writablePrefix.CustomFields = cfData
 	}
 
@@ -468,6 +512,8 @@ func ipamPrefixesPartialUpdate(config *Config, d *schema.ResourceData, key strin
 		ID:   int64(id),
 		Data: &writablePrefix,
 	}
+
+	partialUpdatePrefix.WithContext(context.Background())
 	_, uerr := config.client.Ipam.IpamPrefixesPartialUpdate(&partialUpdatePrefix, nil)
 	if uerr != nil {
 		return uerr

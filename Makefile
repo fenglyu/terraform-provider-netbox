@@ -4,6 +4,13 @@ DIR_NAME=netbox
 
 default: build
 
+build-dev:
+#  @[ "${version}" ] || ( echo ">> please provide version=vX.Y.Z"; exit 1 )
+	go build -o ~/.terraform.d/plugins/terraform-provider-$(PKG_NAME)_${version} .
+
+testacc: fmtcheck
+	TF_ACC=1 go test $(TEST) -v -count $(TEST_COUNT) -parallel 20 $(TESTARGS) -timeout 120m
+
 build: fmtcheck generate
 	go install
 
@@ -44,5 +51,5 @@ test-compile:
 
 
 
-.PHONY: build test  vet fmt fmtcheck lint tools errcheck test-compile generate
+.PHONY: build-dev build test  vet fmt fmtcheck lint tools errcheck test-compile generate
 

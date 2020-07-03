@@ -35,6 +35,7 @@ type Config struct {
 }
 
 func (c *Config) LoadAndValidate(ctx context.Context) error {
+
 	if c.BasePath == "" {
 		c.BasePath = NetboxDefaultBasePath
 	}
@@ -47,7 +48,7 @@ func (c *Config) LoadAndValidate(ctx context.Context) error {
 	}
 
 	t := runtimeclient.New(c.Host, c.BasePath, client.DefaultSchemes)
-	log.Print("[INFO] Instantiating http client for host %s and path %s", c.Host, c.BasePath)
+	log.Printf("[INFO] Instantiating http client for host %s and path %s", c.Host, c.BasePath)
 	if c.ApiToken != "" {
 		if len(c.ApiToken) != 40 {
 			return fmt.Errorf("Token length is not 40")

@@ -1,2 +1,5 @@
 .idea/ 
 **/*.swp
+**/.terraform
+**/*.log
+**/terraform.tfstate*
