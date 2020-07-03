@@ -18,7 +18,7 @@ resource "netbox_available_prefixes" "gke-pods" {
   prefix_id = 103
  // available_prefixes {
   prefix_length = 26
-  ispool = false
+  is_pool = true
   status = "active"
   description = "cidr for gke-pods"
  // }

@@ -2,7 +2,6 @@ package netbox
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/fenglyu/go-netbox/netbox/client/ipam"
 	"github.com/fenglyu/go-netbox/netbox/models"
@@ -37,34 +36,20 @@ func resourceIpamPrefixes() *schema.Resource {
 			Delete:  schema.DefaultTimeout(10 * time.Minute),
 			Default: schema.DefaultTimeout(10 * time.Minute),
 		},
-		/*
-			Schema: map[string]*schema.Schema{
-				"prefix": {
-					Type:         schema.TypeString,
-					Optional:     true,
-					ValidateFunc: validation.IsCIDRNetwork(8, 32),
-					Description:  "crave available prefix under the prefix",
-				},
-				"prefix_id": {
-					Type:         schema.TypeInt,
-					Optional:     true,
-					ValidateFunc: validation.IntAtLeast(0),
-					Description:  "A unique integer value identifying this prefix under which is used crave available prefix",
-				},
 
-				"available_prefixes": {
-					Type:        schema.TypeList,
-					Required:    true,
-					ForceNew:    true,
-					Description: "The IPAM prefix in netbox",
-					Elem: &schema.Resource{
-		*/
 		Schema: map[string]*schema.Schema{
+			"parent_prefix": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.IsCIDRNetwork(8, 128),
+				Description:  "crave available prefixes under the parent_prefix",
+			},
 			"prefix": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				ValidateFunc: validation.IsCIDRNetwork(8, 32),
-				Description:  "crave available prefix under the prefix",
+				Computed:     true,
+				ValidateFunc: validation.IsCIDRNetwork(8, 128),
+				Description:  "craved available prefix",
 			},
 			"prefix_id": {
 				Type:         schema.TypeInt,
@@ -111,7 +96,7 @@ func resourceIpamPrefixes() *schema.Resource {
 				Optional:    true,
 				Description: "VRF",
 			},
-			"ispool": {
+			"is_pool": {
 				Type:        schema.TypeBool,
 				Optional:    true,
 				Default:     false,
@@ -228,11 +213,6 @@ func resourceIpamPrefixesCreate(d *schema.ResourceData, m interface{}) error {
 	}
 	param.WithContext(context.Background())
 
-	log.Println("wprefix: ", wPrefix)
-	jsonParam, _ := json.Marshal(param)
-	log.Println("param: ", string(jsonParam))
-	param.WithContext(context.Background())
-
 	log.Printf("[INFO] Requesting AvaliablePrefix creation")
 	res, err := config.client.Ipam.IpamPrefixesAvailablePrefixesCreate(&param, nil)
 	if err != nil {
@@ -256,6 +236,7 @@ func resourceIpamPrefixesRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
+	log.Println("[INFO] resourceIpamPrefixesRead ", prefix)
 	//d.Set("id", prefix.ID)
 	d.Set("description", prefix.Description)
 
@@ -272,7 +253,7 @@ func resourceIpamPrefixesRead(d *schema.ResourceData, m interface{}) error {
 	}
 	d.Set("last_updated", prefix.LastUpdated.String())
 	d.Set("prefix", prefix.Prefix)
-	d.Set("prefix_length", prefix.PrefixLength)
+	d.Set("prefix_length", strings.Split(*prefix.Prefix, "/")[1])
 	if prefix != nil && prefix.Site != nil {
 		d.Set("site", flatternSite(prefix.Site))
 	}
@@ -358,101 +339,6 @@ func resourceIpamPrefixesDelete(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func getIpamPrefix(config *Config, d *schema.ResourceData) (*models.Prefix, error) {
-
-	id, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return nil, err
-	}
-	params := ipam.IpamPrefixesReadParams{
-		ID: int64(id),
-	}
-	params.WithContext(context.Background())
-
-	ipamPrefixesReadOK, err := config.client.Ipam.IpamPrefixesRead(&params, nil)
-	if err != nil || ipamPrefixesReadOK == nil {
-		return nil, fmt.Errorf("Cannot determine prefix with ID %d", id)
-	}
-	return ipamPrefixesReadOK.Payload, nil
-}
-
-func convertPrefixToWritePrefix(p *models.Prefix) (*models.WritablePrefix, error) {
-	if p == nil {
-		return nil, fmt.Errorf("nil pointer")
-	}
-	var wp models.WritablePrefix
-	if p.Prefix != nil {
-		wp.Prefix = p.Prefix
-	}
-	if p.Family != nil {
-		wp.Family = *p.Family.Label
-	}
-	if p.Site != nil {
-		wp.Site = &p.Site.ID
-	}
-	if p.Vrf != nil {
-		wp.Vrf = &p.Vrf.ID
-	}
-	if p.Vlan != nil {
-		wp.Vlan = &p.Vlan.ID
-	}
-	if p.Tenant != nil {
-		wp.Tenant = &p.Tenant.ID
-	}
-	if p.Status != nil {
-		wp.Status = *p.Status.Label
-	}
-	if p.Role != nil {
-		wp.Role = &p.Role.ID
-	}
-
-	wp.IsPool = p.IsPool
-	wp.Description = p.Description
-	wp.Tags = p.Tags
-	wp.CustomFields = p.CustomFields
-
-	return &wp, nil
-}
-
-func getIpamPrefixes(config *Config, d *schema.ResourceData) ([]*models.Prefix, error) {
-
-	prefix, err := getPrefix(config, d)
-	if err != nil {
-		return nil, err
-	}
-
-	//var limit int64 = 1
-	// Compose Parameters for GET: /ipam/prefixes/
-	idStr := d.Id()
-	param := ipam.IpamPrefixesListParams{
-		ID:     &idStr,
-		Prefix: &prefix,
-		//Limit:  &limit,
-	}
-	ipamPrefixListBody, err := config.client.Ipam.IpamPrefixesList(&param, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if ipamPrefixListBody != nil || *ipamPrefixListBody.Payload.Count < 1 {
-		return nil, fmt.Errorf("Unknow prefix %s with ID %s, not found", prefix, d.Id())
-	}
-
-	return ipamPrefixListBody.Payload.Results, nil
-}
-
-func getPrefix(config *Config, d *schema.ResourceData) (string, error) {
-	return getAttrFromSchema("prefix", d, config)
-}
-
-func getAttrFromSchema(resourceSchemaField string, d *schema.ResourceData, config *Config) (string, error) {
-	res, ok := d.GetOk(resourceSchemaField)
-	if !ok {
-		return "", fmt.Errorf("Cannot determine %s: set in this resource", resourceSchemaField)
-	}
-	return res.(string), nil
-}
-
 func ipamPrefixesPartialUpdate(config *Config, d *schema.ResourceData, key string) error {
 
 	var writablePrefix models.WritablePrefix
@@ -513,6 +399,9 @@ func ipamPrefixesPartialUpdate(config *Config, d *schema.ResourceData, key strin
 		Data: &writablePrefix,
 	}
 
+	log.Println("[INFO] ipamPrefixesPartialUpdate writablePrefix", writablePrefix)
+	log.Println("[INFO] ipamPrefixesPartialUpdate partialUpdatePrefix", partialUpdatePrefix)
+
 	partialUpdatePrefix.WithContext(context.Background())
 	_, uerr := config.client.Ipam.IpamPrefixesPartialUpdate(&partialUpdatePrefix, nil)
 	if uerr != nil {
@@ -520,6 +409,63 @@ func ipamPrefixesPartialUpdate(config *Config, d *schema.ResourceData, key strin
 	}
 
 	return nil
+}
+
+func getIpamPrefix(config *Config, d *schema.ResourceData) (*models.Prefix, error) {
+
+	id, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return nil, err
+	}
+	params := ipam.IpamPrefixesReadParams{
+		ID: int64(id),
+	}
+	params.WithContext(context.Background())
+
+	ipamPrefixesReadOK, err := config.client.Ipam.IpamPrefixesRead(&params, nil)
+	if err != nil || ipamPrefixesReadOK == nil {
+		return nil, fmt.Errorf("Cannot determine prefix with ID %d", id)
+	}
+	return ipamPrefixesReadOK.Payload, nil
+}
+
+func getIpamPrefixes(config *Config, d *schema.ResourceData) ([]*models.Prefix, error) {
+
+	prefix, err := getPrefix(config, d)
+	if err != nil {
+		return nil, err
+	}
+
+	//var limit int64 = 1
+	// Compose Parameters for GET: /ipam/prefixes/
+	idStr := d.Id()
+	param := ipam.IpamPrefixesListParams{
+		ID:     &idStr,
+		Prefix: &prefix,
+		//Limit:  &limit,
+	}
+	ipamPrefixListBody, err := config.client.Ipam.IpamPrefixesList(&param, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if ipamPrefixListBody != nil || *ipamPrefixListBody.Payload.Count < 1 {
+		return nil, fmt.Errorf("Unknow prefix %s with ID %s, not found", prefix, d.Id())
+	}
+
+	return ipamPrefixListBody.Payload.Results, nil
+}
+
+func getPrefix(config *Config, d *schema.ResourceData) (string, error) {
+	return getAttrFromSchema("prefix", d, config)
+}
+
+func getAttrFromSchema(resourceSchemaField string, d *schema.ResourceData, config *Config) (string, error) {
+	res, ok := d.GetOk(resourceSchemaField)
+	if !ok {
+		return "", fmt.Errorf("Cannot determine %s: set in this resource", resourceSchemaField)
+	}
+	return res.(string), nil
 }
 
 /*
