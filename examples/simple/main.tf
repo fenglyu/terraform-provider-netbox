@@ -21,5 +21,6 @@ resource "netbox_available_prefixes" "gke-pods" {
   is_pool = true
   status = "active"
   description = "cidr for gke-pods"
+  tags = ["k8s", "gke", "gke-pods"]
  // }
 }

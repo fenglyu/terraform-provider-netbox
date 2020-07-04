@@ -3,6 +3,7 @@ package netbox
 import (
 	"github.com/fenglyu/go-netbox/netbox/models"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"sort"
 )
 
 func flatternFamily(f *models.PrefixFamily) []map[string]interface{} {
@@ -111,4 +112,14 @@ func convertStringMap(v map[string]interface{}) map[string]string {
 		m[k] = val.(string)
 	}
 	return m
+}
+
+func convertStringSet(set *schema.Set) []string {
+	s := make([]string, 0, set.Len())
+	for _, v := range set.List() {
+		s = append(s, v.(string))
+	}
+	sort.Strings(s)
+
+	return s
 }

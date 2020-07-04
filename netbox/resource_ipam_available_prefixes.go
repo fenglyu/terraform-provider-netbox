@@ -279,42 +279,83 @@ func resourceIpamPrefixesRead(d *schema.ResourceData, m interface{}) error {
 
 func resourceIpamPrefixesUpdate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
-	if d.HasChange("prefix") && !d.IsNewResource() {
-		return ipamPrefixesPartialUpdate(config, d, "prefix")
-	}
+
+	var writablePrefix models.WritablePrefix
+
+	// required property
+	prefixData := d.Get("prefix").(string)
+	writablePrefix.Prefix = &prefixData
+
 	if d.HasChange("prefix_length") && !d.IsNewResource() {
-		return ipamPrefixesPartialUpdate(config, d, "prefix_length")
+		prefixLengthData := d.Get("prefix_length").(int64)
+		writablePrefix.PrefixLength = prefixLengthData
 	}
 	if d.HasChange("site") && !d.IsNewResource() {
-		return ipamPrefixesPartialUpdate(config, d, "site")
+		siteId := d.Get("site").(int64)
+		writablePrefix.Site = &siteId
 	}
 	if d.HasChange("vrf") && !d.IsNewResource() {
-		return ipamPrefixesPartialUpdate(config, d, "vrf")
+		vrfData := d.Get("vrf").(int64)
+		writablePrefix.Vrf = &vrfData
 	}
 	if d.HasChange("tenant") && !d.IsNewResource() {
-		return ipamPrefixesPartialUpdate(config, d, "tenant")
+		tenantData := d.Get("tenant").(int64)
+		writablePrefix.Tenant = &tenantData
 	}
 	if d.HasChange("vlan") && !d.IsNewResource() {
-		return ipamPrefixesPartialUpdate(config, d, "vlan")
+		vlanData := d.Get("vlan").(int64)
+		writablePrefix.Vlan = &vlanData
 	}
 	if d.HasChange("status") && !d.IsNewResource() {
-		return ipamPrefixesPartialUpdate(config, d, "status")
+		statusData := d.Get("status").(string)
+		flag := false
+		for _, str := range prefixinitializeStatus {
+			if statusData == str || (strings.ToLower(statusData) == strings.ToLower(str)) {
+				flag = true
+			}
+		}
+		if !flag {
+			return fmt.Errorf("Not a valid status in %v", prefixinitializeStatus)
+		}
+		writablePrefix.Status = strings.ToLower(statusData)
 	}
 	if d.HasChange("role") && !d.IsNewResource() {
-		return ipamPrefixesPartialUpdate(config, d, "role")
+		roleData := d.Get("role").(int64)
+		writablePrefix.Role = &roleData
 	}
 	if d.HasChange("is_pool") && !d.IsNewResource() {
-		return ipamPrefixesPartialUpdate(config, d, "is_pool")
+		isPoolData := d.Get("is_pool").(bool)
+		writablePrefix.IsPool = isPoolData
 	}
 	if d.HasChange("description") && !d.IsNewResource() {
-		return ipamPrefixesPartialUpdate(config, d, "description")
+		descriptionData := d.Get("description").(string)
+		writablePrefix.Description = descriptionData
 	}
 	if d.HasChange("tags") && !d.IsNewResource() {
-		return ipamPrefixesPartialUpdate(config, d, "tags")
+		writablePrefix.Tags = convertStringSet(d.Get("tags").(*schema.Set))
 	}
 	if d.HasChange("custom_fields") && !d.IsNewResource() {
-		return ipamPrefixesPartialUpdate(config, d, "custom_fields")
+		cfData := d.Get("custom_fields").(map[string]string)
+		writablePrefix.CustomFields = cfData
 	}
+	id, err := strconv.Atoi(d.Id())
+	if err != nil {
+		return err
+	}
+	partialUpdatePrefix := ipam.IpamPrefixesPartialUpdateParams{
+		ID:   int64(id),
+		Data: &writablePrefix,
+	}
+
+	//	log.Println("[INFO] ipamPrefixesPartialUpdate writablePrefix", writablePrefix)
+	//	log.Println("[INFO] ipamPrefixesPartialUpdate partialUpdatePrefix", partialUpdatePrefix)
+
+	partialUpdatePrefix.WithContext(context.Background())
+	_, uerr := config.client.Ipam.IpamPrefixesPartialUpdate(&partialUpdatePrefix, nil)
+	if uerr != nil {
+		return uerr
+	}
+
 	return resourceIpamPrefixesRead(d, m)
 }
 
