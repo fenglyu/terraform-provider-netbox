@@ -50,13 +50,9 @@ func (c *Config) LoadAndValidate(ctx context.Context) error {
 	t := runtimeclient.New(c.Host, c.BasePath, client.DefaultSchemes)
 	log.Printf("[INFO] Instantiating http client for host %s and path %s", c.Host, c.BasePath)
 	if c.ApiToken != "" {
-		if len(c.ApiToken) != 40 {
-			return fmt.Errorf("Token length is not 40")
-		}
 		t.DefaultAuthentication = runtimeclient.APIKeyAuth(AuthHeaderName, "header", fmt.Sprintf(AuthHeaderFormat, c.ApiToken))
 	}
-
-	t.SetDebug(true)
+	//t.SetDebug(true)
 	c.client = client.New(t, strfmt.Default)
 
 	return nil
