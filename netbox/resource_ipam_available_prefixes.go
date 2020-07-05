@@ -2,6 +2,7 @@ package netbox
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/fenglyu/go-netbox/netbox/client/ipam"
 	"github.com/fenglyu/go-netbox/netbox/models"
@@ -16,17 +17,24 @@ import (
 	"time"
 )
 
-func resourceIpamPrefixes() *schema.Resource {
+var (
+	availablePrefixesKeys = []string{
+		"parent_prefix",
+		"parent_prefix_id",
+	}
+)
+
+func resourceIpamAvailablePrefixes() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceIpamPrefixesCreate,
-		Read:   resourceIpamPrefixesRead,
-		Update: resourceIpamPrefixesUpdate,
-		Delete: resourceIpamPrefixesDelete,
-		/*
-			Importer: &schema.ResourceImporter{
-				State: resourceIpamPrefixesImportState,
-			},
-		*/
+		Create: resourceIpamAvailablePrefixesCreate,
+		Read:   resourceIpamAvailablePrefixesRead,
+		Update: resourceIpamAvailablePrefixesUpdate,
+		Delete: resourceIpamAvailablePrefixesDelete,
+
+		Importer: &schema.ResourceImporter{
+			//	State: resourceIpamAvailablePrefixesImportState,
+			State: schema.ImportStatePassthrough,
+		},
 		SchemaVersion: 1,
 		// TODO after test coverage finished
 		//MigrateState:
@@ -41,6 +49,8 @@ func resourceIpamPrefixes() *schema.Resource {
 			"parent_prefix": {
 				Type:         schema.TypeString,
 				Optional:     true,
+				ForceNew:     true,
+				AtLeastOneOf: availablePrefixesKeys,
 				ValidateFunc: validation.IsCIDRNetwork(8, 128),
 				Description:  "crave available prefixes under the parent_prefix",
 			},
@@ -51,9 +61,11 @@ func resourceIpamPrefixes() *schema.Resource {
 				ValidateFunc: validation.IsCIDRNetwork(8, 128),
 				Description:  "craved available prefix",
 			},
-			"prefix_id": {
+			"parent_prefix_id": {
 				Type:         schema.TypeInt,
 				Optional:     true,
+				ForceNew:     true,
+				AtLeastOneOf: availablePrefixesKeys,
 				ValidateFunc: validation.IntAtLeast(0),
 				Description:  "A unique integer value identifying this prefix under which is used crave available prefix",
 			},
@@ -127,22 +139,22 @@ func resourceIpamPrefixes() *schema.Resource {
 	}
 }
 
-func resourceIpamPrefixesCreate(d *schema.ResourceData, m interface{}) error {
+func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
 	wPrefix := models.WritablePrefix{}
 
 	var prefix_id int64
-	if pfx_id, ok := d.GetOk("prefix_id"); ok {
+	if pfx_id, ok := d.GetOk("parent_prefix_id"); ok {
 		prefix_id = int64(pfx_id.(int))
+		// not necessary
 		//wPrefix.ID = prefix_id
 	}
 
-	var prefix string
-	if pfix, ok := d.GetOk("prefix"); ok {
-		prefix = pfix.(string)
-		wPrefix.Prefix = &prefix
-	}
+	//As of version 2.8, Netbox doesn't require "prefix" in post data,
+	//only prefix_length and a parent_id is mandatory
+	//prerent_prefix here is prepared to fetch prrent_prefix_id only
+	//wPrefix.Prefix = &prefix
 
 	var prefixlength int64
 	if pl, ok := d.GetOk("prefix_length"); ok {
@@ -198,7 +210,7 @@ func resourceIpamPrefixesCreate(d *schema.ResourceData, m interface{}) error {
 
 	var tags []string
 	if tagsData, ok := d.GetOk("tags"); ok {
-		tags = tagsData.([]string)
+		tags = convertStringSet(tagsData.(*schema.Set))
 		wPrefix.Tags = tags
 	}
 
@@ -207,13 +219,30 @@ func resourceIpamPrefixesCreate(d *schema.ResourceData, m interface{}) error {
 		customFields = cfData.(map[string]string)
 		wPrefix.CustomFields = customFields
 	}
+
+	// If parent prefix is given
+	wPrefixRes, _ := json.Marshal(wPrefix)
+	log.Printf("[INFO] ", string(wPrefixRes))
+
+	if _, ok := getParentPrefix(config, d); ok == nil {
+		if wPrefix.ID == 0 {
+			results, err := getIpamPrefixes(config, d)
+			if err != nil {
+				return err
+			}
+			wPrefix.ID = results[0].ID
+			prefix_id = results[0].ID
+		}
+	}
 	param := ipam.IpamPrefixesAvailablePrefixesCreateParams{
 		ID:   int64(prefix_id),
 		Data: &wPrefix,
 	}
 	param.WithContext(context.Background())
 
-	log.Printf("[INFO] Requesting AvaliablePrefix creation")
+	paramRes, _ := json.Marshal(param)
+	log.Printf("[INFO] Requesting AvaliablePrefix creation %s", string(paramRes))
+
 	res, err := config.client.Ipam.IpamPrefixesAvailablePrefixesCreate(&param, nil)
 	if err != nil {
 		// The resource didn't actually create
@@ -222,13 +251,12 @@ func resourceIpamPrefixesCreate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	availablePrefix := res.GetPayload()
-
 	d.SetId(fmt.Sprintf("%d", availablePrefix.ID))
 
-	return resourceIpamPrefixesRead(d, m)
+	return resourceIpamAvailablePrefixesRead(d, m)
 }
 
-func resourceIpamPrefixesRead(d *schema.ResourceData, m interface{}) error {
+func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
 	prefix, err := getIpamPrefix(config, d)
@@ -277,7 +305,7 @@ func resourceIpamPrefixesRead(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func resourceIpamPrefixesUpdate(d *schema.ResourceData, m interface{}) error {
+func resourceIpamAvailablePrefixesUpdate(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
 	var writablePrefix models.WritablePrefix
@@ -352,10 +380,10 @@ func resourceIpamPrefixesUpdate(d *schema.ResourceData, m interface{}) error {
 		return uerr
 	}
 
-	return resourceIpamPrefixesRead(d, m)
+	return resourceIpamAvailablePrefixesRead(d, m)
 }
 
-func resourceIpamPrefixesDelete(d *schema.ResourceData, m interface{}) error {
+func resourceIpamAvailablePrefixesDelete(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
 
 	log.Printf("[INFO]Requesting Prefix deletion: %s", d.Get("prefix").(string))
@@ -391,38 +419,41 @@ func getIpamPrefix(config *Config, d *schema.ResourceData) (*models.Prefix, erro
 	if err != nil || ipamPrefixesReadOK == nil {
 		return nil, fmt.Errorf("Cannot determine prefix with ID %d", id)
 	}
+
 	return ipamPrefixesReadOK.Payload, nil
 }
 
 func getIpamPrefixes(config *Config, d *schema.ResourceData) ([]*models.Prefix, error) {
 
-	prefix, err := getPrefix(config, d)
+	prefix, err := getParentPrefix(config, d)
 	if err != nil {
 		return nil, err
 	}
 
 	//var limit int64 = 1
 	// Compose Parameters for GET: /ipam/prefixes/
-	idStr := d.Id()
+	//idStr := d.Id()
 	param := ipam.IpamPrefixesListParams{
-		ID:     &idStr,
+		//ID:     &idStr,
 		Prefix: &prefix,
 		//Limit:  &limit,
 	}
+	param.WithContext(context.Background())
 	ipamPrefixListBody, err := config.client.Ipam.IpamPrefixesList(&param, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	if ipamPrefixListBody != nil || *ipamPrefixListBody.Payload.Count < 1 {
+	//ipamPrefixesReadOKRes, _ := json.Marshal(&ipamPrefixListBody.Payload.Results)
+	//log.Println("ipamPrefixListBody", string(ipamPrefixesReadOKRes))
+	if ipamPrefixListBody == nil || *ipamPrefixListBody.Payload.Count < 1 {
 		return nil, fmt.Errorf("Unknow prefix %s with ID %s, not found", prefix, d.Id())
 	}
 
 	return ipamPrefixListBody.Payload.Results, nil
 }
 
-func getPrefix(config *Config, d *schema.ResourceData) (string, error) {
-	return getAttrFromSchema("prefix", d, config)
+func getParentPrefix(config *Config, d *schema.ResourceData) (string, error) {
+	return getAttrFromSchema("parent_prefix", d, config)
 }
 
 func getAttrFromSchema(resourceSchemaField string, d *schema.ResourceData, config *Config) (string, error) {
@@ -432,25 +463,3 @@ func getAttrFromSchema(resourceSchemaField string, d *schema.ResourceData, confi
 	}
 	return res.(string), nil
 }
-
-/*
-func resourceIpamPrefixesImportState(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	config := meta.(*Config)
-	if err := parseImportId([]string{
-		"projects/(?P<project>[^/]+)/zones/(?P<zone>[^/]+)/instances/(?P<name>[^/]+)",
-		"(?P<project>[^/]+)/(?P<zone>[^/]+)/(?P<name>[^/]+)",
-		"(?P<name>[^/]+)",
-	}, d, config); err != nil {
-		return nil, err
-	}
-
-	// Replace import id for the resource id
-	id, err := replaceVars(d, config, "projects/{{project}}/zones/{{zone}}/instances/{{name}}")
-	if err != nil {
-		return nil, fmt.Errorf("Error constructing id: %s", err)
-	}
-	d.SetId(id)
-
-	return []*schema.ResourceData{d}, nil
-}
-*/
