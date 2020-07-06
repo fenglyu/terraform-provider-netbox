@@ -24,24 +24,16 @@ RUN curl -s http://pki.blizzard.net/pki/blizzardroot.pem -o /etc/pki/ca-trust/so
 RUN curl -s http://pki.blizzard.net/pki/BlizzardCA01.pem -o /etc/pki/ca-trust/source/anchors/BlizzardCA01.crt
 RUN update-ca-trust extract
 
-#RUN pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple virtualenv && \
+#RUN pip3 install -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com  virtualenv && \
 #    python3 -m virtualenv --python=/usr/bin/python3 /opt/netbox/venv
-#
-#RUN /opt/netbox/venv/bin/pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r /opt/netbox/requirements.txt
 
-RUN pip3 install -i http://pip.battle.net:6081/api/pypi/pip-virtual/simple --trusted-host pip.battle.net virtualenv && \
+#RUN /opt/netbox/venv/bin/pip3 install -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r /opt/netbox/requirements.txt
+
+RUN pip3 install -i http://pip.battle.net:6081/api/pypi/pip-virtual/simple --trusted-host pip.battle.net virtualenv==20.0.25 && \
     python3 -m virtualenv --python=/usr/bin/python3 /opt/netbox/venv
-
 RUN /opt/netbox/venv/bin/pip install -i http://pip.battle.net:6081/api/pypi/pip-virtual/simple --trusted-host pip.battle.net -r /opt/netbox/requirements.txt
-
-
 RUN  cp ./configuration.py /opt/netbox/netbox/netbox/
 
-#RUN cd /opt/netbox/netbox/ && \
-#    /opt/netbox/venv/bin/python3 manage.py migrate && \
-#    /opt/netbox/venv/bin/python3 manage.py createsuperuser && \
-#    /opt/netbox/venv/bin/python3 manage.py collectstatic --no-input
-#RUN chown a+x /init.sh
 EXPOSE 8000
 
 ENTRYPOINT [ "/bin/bash", "/init.sh" ]

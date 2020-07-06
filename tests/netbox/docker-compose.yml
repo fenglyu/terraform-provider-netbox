@@ -19,26 +19,24 @@ services:
       - backend
 
   netbox:
-    build: ./netbox
-    image: netbox:20200622
+    #build: ./netbox
+    image: cloud/netbox:latest
     depends_on:
       - db
       - redis
-  #  ports:
-  #    - 8000:8000
     networks:
       - frontend
       - backend
 
   # add "127.0.0.1 netbox.k8s.me netbox" to hosts file
   nginx:
-    build: ./nginx
-    image: nginx:20200622
- #   image: nginx:1.19.0-alpine
+    #build: ./nginx
+    image: cloud/nginx:latest
     depends_on:
       - netbox
     ports:
       - 80:80
+      - 443:443
     networks:
       - frontend
 

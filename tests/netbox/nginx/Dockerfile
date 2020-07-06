@@ -1,5 +1,7 @@
 FROM   nginx:1.19.0-alpine
 
+WORKDIR /
+
 COPY ./fake/nginx-selfsigned.crt /etc/ssl/certs/nginx-selfsigned.crt
 COPY ./fake/nginx-selfsigned.key /etc/ssl/private/nginx-selfsigned.key
 COPY ./fake/dhparam.pem /etc/ssl/certs/dhparam.pem

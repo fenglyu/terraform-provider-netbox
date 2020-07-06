@@ -47,7 +47,11 @@ func (c *Config) LoadAndValidate(ctx context.Context) error {
 		c.Host = NetboxDefaultHost
 	}
 
-	t := runtimeclient.New(c.Host, c.BasePath, client.DefaultSchemes)
+	httpClient, err := runtimeclient.TLSClient(runtimeclient.TLSClientOptions{InsecureSkipVerify: true})
+	if err != nil {
+		log.Fatal(err)
+	}
+	t := runtimeclient.NewWithClient(c.Host, c.BasePath, []string{"https", "http"}, httpClient)
 	log.Printf("[INFO] Instantiating http client for host %s and path %s", c.Host, c.BasePath)
 	if c.ApiToken != "" {
 		t.DefaultAuthentication = runtimeclient.APIKeyAuth(AuthHeaderName, "header", fmt.Sprintf(AuthHeaderFormat, c.ApiToken))

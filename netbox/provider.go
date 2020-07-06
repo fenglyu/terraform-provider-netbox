@@ -13,6 +13,7 @@ func Provider() terraform.ResourceProvider {
 				Type:     schema.TypeString,
 				Optional: true,
 				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
+					"NETBOX_TOKEN",
 					"NETBOX_API_TOKEN",
 					"API_TOKEN",
 				}, nil),
