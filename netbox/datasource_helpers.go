@@ -48,3 +48,19 @@ func datasourceSchemaFromResourceSchema(rs map[string]*schema.Schema) map[string
 	}
 	return ds
 }
+
+func fixDatasourceSchemaFlags(schema map[string]*schema.Schema, required bool, keys ...string) {
+	for _, v := range keys {
+		schema[v].Computed = false
+		schema[v].Optional = !required
+		schema[v].Required = required
+	}
+}
+
+func addRequiredFieldsToSchema(schema map[string]*schema.Schema, keys ...string) {
+	fixDatasourceSchemaFlags(schema, true, keys...)
+}
+
+func addOptionalFieldsToSchema(schema map[string]*schema.Schema, keys ...string) {
+	fixDatasourceSchemaFlags(schema, false, keys...)
+}

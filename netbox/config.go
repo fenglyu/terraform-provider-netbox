@@ -30,8 +30,8 @@ type Config struct {
 	RequestTimeout time.Duration
 
 	// new box client
-	client  *client.NetBox
-	context context.Context
+	client *client.NetBox
+	//context context.Context
 }
 
 func (c *Config) LoadAndValidate(ctx context.Context) error {

@@ -38,11 +38,11 @@ func Provider() terraform.ResourceProvider {
 				Optional: true,
 			},
 		},
-		/*
-			DataSourcesMap: map[string]*schema.Resource{
-				"ipam_available_prefixes": dataSourceIpamPrefixes(),
-			},
-		*/
+
+		DataSourcesMap: map[string]*schema.Resource{
+			"netbox_available_prefixes": dataSourceIpamAvailablePrefixes(),
+		},
+
 		ResourcesMap: ResourceMap(),
 	}
 
@@ -86,18 +86,3 @@ func providerConfigure(d *schema.ResourceData, p *schema.Provider, terraformVers
 
 	return &config, nil
 }
-
-/*
-func validateCredentials(v interface{}, k string) (warnings []string, errors []error) {
-	if v == nil ||v.(string) == ""{
-		return
-	}
-
-	apiToken :=v.(string)
-	// more validate logic
-	if _, err := netbox.NewNetboxWithAPIKey(host, apiToken); err != nil{
-		errors = append(errors, fmt.Errorf("credentials are not valid: %s", err))
-	}
-	return
-}
-*/

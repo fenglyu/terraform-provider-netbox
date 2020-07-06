@@ -44,6 +44,11 @@ ifeq ($(IS_LATEST),true)
     	$(NAMESPACE)/netbox:$(LATEST_VERSION)
 endif
 
+compose-up:
+	@cd netbox; docker-compose up -d
+
+compose-down:
+	@cd netbox; docker-compose down -d
 
 push-image: prep
 	@docker push $(NAMESPACE)/netbox:$(VERSION)
@@ -53,4 +58,4 @@ endif
 
 publish: push-image
 
-.PHONY: prep lint build publish push-image
+.PHONY: prep lint build publish push-image compose-up compose-down

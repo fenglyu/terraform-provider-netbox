@@ -28,7 +28,7 @@ services:
       - frontend
       - backend
 
-  # add "127.0.0.1 netbox.k8s.me netbox" to hosts file
+  # add "127.0.0.1 netbox.k8s.me netbox" to hosts file during development
   nginx:
     #build: ./nginx
     image: cloud/nginx:latest

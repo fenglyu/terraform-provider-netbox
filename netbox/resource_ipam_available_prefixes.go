@@ -4,17 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/fenglyu/go-netbox/netbox/client/ipam"
-	"github.com/fenglyu/go-netbox/netbox/models"
 	"log"
 	"strconv"
 	"strings"
+	"time"
 
-	//"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
-	//	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
-	"time"
+
+	"github.com/fenglyu/go-netbox/netbox/client/ipam"
+	"github.com/fenglyu/go-netbox/netbox/models"
 )
 
 var (
@@ -222,7 +221,7 @@ func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) 
 
 	// If parent prefix is given
 	wPrefixRes, _ := json.Marshal(wPrefix)
-	log.Printf("[INFO] ", string(wPrefixRes))
+	log.Println("[INFO] ", string(wPrefixRes))
 
 	if _, ok := getParentPrefix(config, d); ok == nil {
 		if wPrefix.ID == 0 {
@@ -267,10 +266,7 @@ func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) er
 	log.Println("[INFO] resourceIpamPrefixesRead ", prefix)
 	//d.Set("id", prefix.ID)
 	d.Set("description", prefix.Description)
-
-	if err := d.Set("custom_fields", flattenCustomFields(prefix)); err != nil {
-		return err
-	}
+	d.Set("custom_fields", flattenCustomFields(prefix))
 	d.Set("is_pool", prefix.IsPool)
 	d.Set("created", prefix.Created)
 	if prefix != nil && prefix.Family != nil {
@@ -280,6 +276,7 @@ func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) er
 		d.Set("role", flatternRole(prefix.Role))
 	}
 	d.Set("last_updated", prefix.LastUpdated.String())
+
 	d.Set("prefix", prefix.Prefix)
 	d.Set("prefix_length", strings.Split(*prefix.Prefix, "/")[1])
 	if prefix != nil && prefix.Site != nil {
@@ -288,20 +285,18 @@ func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) er
 	if prefix != nil && prefix.Status != nil {
 		d.Set("status", flatterPrefixStatus(prefix.Status))
 	}
-
 	d.Set("tags", prefix.Tags)
-
 	if prefix != nil && prefix.Tenant != nil {
 		d.Set("tenant", flatternNestedTenant(prefix.Tenant))
 	}
 	if prefix != nil && prefix.Vlan != nil {
 		d.Set("vlan", flatternNestedVLAN(prefix.Vlan))
 	}
-
 	if prefix != nil && prefix.Vrf != nil {
 		d.Set("vrf", flatternNestedVRF(prefix.Vrf))
 	}
 
+	d.SetId(fmt.Sprintf("%d", prefix.ID))
 	return nil
 }
 
@@ -338,7 +333,7 @@ func resourceIpamAvailablePrefixesUpdate(d *schema.ResourceData, m interface{}) 
 		statusData := d.Get("status").(string)
 		flag := false
 		for _, str := range prefixinitializeStatus {
-			if statusData == str || (strings.ToLower(statusData) == strings.ToLower(str)) {
+			if statusData == str || (strings.EqualFold(statusData, str)) {
 				flag = true
 			}
 		}
