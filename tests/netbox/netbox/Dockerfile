@@ -12,7 +12,7 @@ RUN dnf clean all && \
     openssl-devel redhat-rpm-config && \
     dnf clean all && \
    # curl -o netbox.tar.gz https://github.com/netbox-community/netbox/archive/v2.8.6tar.gz && \
-    tar xzf ./v2.8.6.tar.gz -C /opt && \
+    tar xzf ./netbox-v2.8.6.tar.gz -C /opt && \
     cd /opt/ && \
     ln -s netbox-2.8.6/ netbox
 
