@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/fenglyu/go-netbox/netbox/client/ipam"
@@ -31,16 +32,24 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 	var prefix *models.Prefix
 	if v, ok := d.GetOk("prefix"); ok {
 		pStr := v.(string)
+
+		withinInclude := pStr
+		prefixLength, err := strconv.Atoi(strings.Split(withinInclude, "/")[1])
+		if err != nil {
+			return fmt.Errorf("Error in [getIpamPrefixes] %v", err)
+		}
+		maskLength := float64(prefixLength)
 		param := ipam.IpamPrefixesListParams{
-			//ID:     &idStr,
-			Prefix: &pStr,
-			//Limit:  &limit,
+			MaskLength:    &maskLength,
+			WithinInclude: &withinInclude,
 		}
 		param.WithContext(context.Background())
 		ipamPrefixListBody, err := config.client.Ipam.IpamPrefixesList(&param, nil)
 		if err != nil {
 			return err
 		}
+		ipamPrefixesReadOKRes, _ := json.Marshal(&ipamPrefixListBody.Payload.Results)
+		log.Println("ipamPrefixListBody", string(ipamPrefixesReadOKRes))
 		if ipamPrefixListBody == nil || *ipamPrefixListBody.Payload.Count < 1 {
 			return fmt.Errorf("Unknow prefix %s with ID %s, not found", prefix, d.Id())
 		}
@@ -53,11 +62,9 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 	d.Set("custom_fields", flattenCustomFields(prefix))
 	d.Set("is_pool", prefix.IsPool)
 	d.Set("created", prefix.Created)
-	if prefix != nil && prefix.Family != nil {
-		d.Set("family", flatternFamily(prefix.Family))
-	}
+	d.Set("family", prefix.Family)
 	if prefix != nil && prefix.Role != nil {
-		d.Set("role", flatternRole(prefix.Role))
+		d.Set("role", flatternRoleV247(prefix.Role))
 	}
 	d.Set("last_updated", prefix.LastUpdated.String())
 
@@ -77,7 +84,7 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 		d.Set("vlan", flatternNestedVLAN(prefix.Vlan))
 	}
 	if prefix != nil && prefix.Vrf != nil {
-		d.Set("vrf", flatternNestedVRF(prefix.Vrf))
+		d.Set("vrf", flatternNestedVRFV247(prefix.Vrf))
 	}
 	d.SetId(fmt.Sprintf("%d", prefix.ID))
 
