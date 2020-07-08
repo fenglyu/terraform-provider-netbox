@@ -14,7 +14,7 @@ RUN dnf clean all && \
     # curl -o netbox.tar.gz https://github.com/netbox-community/netbox/archive/v2.8.6tar.gz && \
     tar xzf ./netbox-v2.4.7.tar.gz -C /opt && \
     cd /opt/ && \
-    ln -s netbox-v2.4.7/ netbox
+    ln -s netbox-2.4.7/ netbox
 
 RUN groupadd --system netbox && \
     adduser --system --gid netbox netbox && \
