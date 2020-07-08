@@ -20,6 +20,18 @@ var (
 	prefixinitializeStatus = []string{
 		"container", "active", "reserved", "deprecated",
 	}
+	// Below is a work-around for netbox v2.4.7
+	prefixStatusContainer  int64 = 0
+	prefixStatusActive     int64 = 1
+	prefixStatusReserved   int64 = 2
+	prefixStatusDeprecated int64 = 3
+
+	prefixStatusIDMap = map[string]int64{
+		"container":  prefixStatusContainer,
+		"active":     prefixStatusActive,
+		"reserved":   prefixStatusReserved,
+		"deprecated": prefixStatusDeprecated,
+	}
 )
 
 // Config support all configurations for provider

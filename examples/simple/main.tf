@@ -5,7 +5,7 @@ terraform {
 }
 
 provider "netbox" {
-  api_token = "c4a3c627b64fa514e8e0840a94c06b04eb8674d9"
+  api_token = "434476c51e79b0badfad4afcd9a64b4dede1adb9"
   host      = "netbox.k8s.me"
   base_path      = "/api"
   // Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
@@ -16,10 +16,12 @@ provider "netbox" {
 resource "netbox_available_prefixes" "gke-pods" {
   // example schema attribute
   //parent_prefix = "10.0.4.0/24"
-  parent_prefix_id = 31
-  prefix_length = 26
+  parent_prefix_id = 39
+  prefix_length = 29
   is_pool = true
   status = "active"
+  vrf = 1
+  tenant = 1
   description = "cidr for gke-pods"
   tags = ["k8s", "gke", "gke-pods"]
 

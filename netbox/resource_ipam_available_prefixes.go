@@ -117,7 +117,6 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 				Type:         schema.TypeString,
 				Default:      "active",
 				Optional:     true,
-				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice(prefixinitializeStatus, false),
 				Description:  "Operational status of this prefix",
 			},
@@ -186,7 +185,7 @@ func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) 
 	var status string
 	if statusData, ok := d.GetOk("status"); ok {
 		status = statusData.(string)
-		wPrefix.Status = status
+		wPrefix.Status = prefixStatusIDMap[status]
 	}
 
 	var role int64
@@ -269,11 +268,9 @@ func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) er
 	d.Set("custom_fields", flattenCustomFields(prefix))
 	d.Set("is_pool", prefix.IsPool)
 	d.Set("created", prefix.Created)
-	if prefix != nil && prefix.Family != nil {
-		d.Set("family", flatternFamily(prefix.Family))
-	}
+	d.Set("family", prefix.Family)
 	if prefix != nil && prefix.Role != nil {
-		d.Set("role", flatternRole(prefix.Role))
+		d.Set("role", flatternRoleV247(prefix.Role))
 	}
 	d.Set("last_updated", prefix.LastUpdated.String())
 
@@ -293,7 +290,7 @@ func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) er
 		d.Set("vlan", flatternNestedVLAN(prefix.Vlan))
 	}
 	if prefix != nil && prefix.Vrf != nil {
-		d.Set("vrf", flatternNestedVRF(prefix.Vrf))
+		d.Set("vrf", flatternNestedVRFV247(prefix.Vrf))
 	}
 
 	d.SetId(fmt.Sprintf("%d", prefix.ID))
@@ -310,23 +307,23 @@ func resourceIpamAvailablePrefixesUpdate(d *schema.ResourceData, m interface{}) 
 	writablePrefix.Prefix = &prefixData
 
 	if d.HasChange("prefix_length") && !d.IsNewResource() {
-		prefixLengthData := d.Get("prefix_length").(int64)
+		prefixLengthData := int64(d.Get("prefix_length").(int))
 		writablePrefix.PrefixLength = prefixLengthData
 	}
 	if d.HasChange("site") && !d.IsNewResource() {
-		siteId := d.Get("site").(int64)
+		siteId := int64(d.Get("site").(int))
 		writablePrefix.Site = &siteId
 	}
 	if d.HasChange("vrf") && !d.IsNewResource() {
-		vrfData := d.Get("vrf").(int64)
+		vrfData := int64(d.Get("vrf").(int))
 		writablePrefix.Vrf = &vrfData
 	}
 	if d.HasChange("tenant") && !d.IsNewResource() {
-		tenantData := d.Get("tenant").(int64)
+		tenantData := int64(d.Get("tenant").(int))
 		writablePrefix.Tenant = &tenantData
 	}
 	if d.HasChange("vlan") && !d.IsNewResource() {
-		vlanData := d.Get("vlan").(int64)
+		vlanData := int64(d.Get("vlan").(int))
 		writablePrefix.Vlan = &vlanData
 	}
 	if d.HasChange("status") && !d.IsNewResource() {
@@ -340,11 +337,12 @@ func resourceIpamAvailablePrefixesUpdate(d *schema.ResourceData, m interface{}) 
 		if !flag {
 			return fmt.Errorf("Not a valid status in %v", prefixinitializeStatus)
 		}
-		writablePrefix.Status = strings.ToLower(statusData)
+		writablePrefix.Status = prefixStatusIDMap[strings.ToLower(statusData)]
 	}
 	if d.HasChange("role") && !d.IsNewResource() {
-		roleData := d.Get("role").(int64)
+		roleData := int64(d.Get("role").(int))
 		writablePrefix.Role = &roleData
+
 	}
 	if d.HasChange("is_pool") && !d.IsNewResource() {
 		isPoolData := d.Get("is_pool").(bool)
@@ -370,9 +368,11 @@ func resourceIpamAvailablePrefixesUpdate(d *schema.ResourceData, m interface{}) 
 		Data: &writablePrefix,
 	}
 	partialUpdatePrefix.WithContext(context.Background())
-	_, uerr := config.client.Ipam.IpamPrefixesPartialUpdate(&partialUpdatePrefix, nil)
+	partialUpdatePrefixRes, _ := json.Marshal(partialUpdatePrefix)
+	log.Println("partialUpdatePrefix: ", string(partialUpdatePrefixRes))
+	res, uerr := config.client.Ipam.IpamPrefixesPartialUpdate(&partialUpdatePrefix, nil)
 	if uerr != nil {
-		return uerr
+		return fmt.Errorf("%v %v", res, uerr)
 	}
 
 	return resourceIpamAvailablePrefixesRead(d, m)
@@ -427,19 +427,25 @@ func getIpamPrefixes(config *Config, d *schema.ResourceData) ([]*models.Prefix, 
 
 	//var limit int64 = 1
 	// Compose Parameters for GET: /ipam/prefixes/
-	//idStr := d.Id()
+	withinInclude := prefix
+	prefixLength, err := strconv.Atoi(strings.Split(withinInclude, "/")[1])
+	if err != nil {
+		return nil, fmt.Errorf("Error in [getIpamPrefixes] %v", err)
+	}
+	maskLength := float64(prefixLength)
+	// v2.4.7 api query fomat
+	// http://netbox.k8s.me/api/ipam/prefixes/?mask_length=24&within_include=10.247.5.0/24
 	param := ipam.IpamPrefixesListParams{
-		//ID:     &idStr,
-		Prefix: &prefix,
-		//Limit:  &limit,
+		MaskLength:    &maskLength,
+		WithinInclude: &withinInclude,
 	}
 	param.WithContext(context.Background())
 	ipamPrefixListBody, err := config.client.Ipam.IpamPrefixesList(&param, nil)
 	if err != nil {
 		return nil, err
 	}
-	//ipamPrefixesReadOKRes, _ := json.Marshal(&ipamPrefixListBody.Payload.Results)
-	//log.Println("ipamPrefixListBody", string(ipamPrefixesReadOKRes))
+	ipamPrefixesReadOKRes, _ := json.Marshal(&ipamPrefixListBody.Payload.Results)
+	log.Println("ipamPrefixListBody", string(ipamPrefixesReadOKRes))
 	if ipamPrefixListBody == nil || *ipamPrefixListBody.Payload.Count < 1 {
 		return nil, fmt.Errorf("Unknow prefix %s with ID %s, not found", prefix, d.Id())
 	}
