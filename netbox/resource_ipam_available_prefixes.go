@@ -372,6 +372,7 @@ func resourceIpamAvailablePrefixesUpdate(d *schema.ResourceData, m interface{}) 
 	log.Println("partialUpdatePrefix: ", string(partialUpdatePrefixRes))
 	res, uerr := config.client.Ipam.IpamPrefixesPartialUpdate(&partialUpdatePrefix, nil)
 	if uerr != nil {
+		// TODO Support verbose response body here
 		return fmt.Errorf("%v %v", res, uerr)
 	}
 

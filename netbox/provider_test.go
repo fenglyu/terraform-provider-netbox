@@ -77,11 +77,11 @@ func randString(t *testing.T, length int) string {
 
 var testAccProviders map[string]terraform.ResourceProvider
 var testAccProvider *schema.Provider
+var testAccRandomProvider *schema.Provider
 
 func init() {
 	testAccProvider = Provider().(*schema.Provider)
-	testAccProvider := Provider().(*schema.Provider)
-	testAccRandomProvider := random.Provider().(*schema.Provider)
+	testAccRandomProvider = random.Provider().(*schema.Provider)
 
 	testAccProviders = map[string]terraform.ResourceProvider{
 		"netbox": testAccProvider,
@@ -113,7 +113,7 @@ func TestAccProviderBasePath_setBasePath(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckComputeAddressDestroyProducer(t),
+		CheckDestroy: testAccCheckPrefixDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccProviderBasePath_setBasePath("c4a3c627b64fa514e8e0840a94c06b04eb8674d9", "netbox.k8s.me", "/api", "gke-test", randIntRange(t, 18, 30)),
@@ -133,7 +133,7 @@ func TestAccProviderBasePath_setInvalidBasePath(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckComputeAddressDestroyProducer(t),
+		CheckDestroy: testAccCheckPrefixDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config:      testAccProviderBasePath_setBasePath("https://www.example.com/compute/beta/", randIntRange(t, 18, 30)),
@@ -150,10 +150,5 @@ func testAccProviderBasePath_setBasePath(apiToken, host, basePath, name string, 
 		host      = "%s"
 		base_path = "%s"
 	}
-	resource "netbox_available_prefixes" "gke-test" {
-		parent_prefix_id = %d
-		prefix_length = %d
-		tags = ["test-acc", "testAcc"]
-
-}`, apiToken, basePath, name)
+`, apiToken, basePath, name)
 }
