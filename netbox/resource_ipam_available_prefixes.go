@@ -132,6 +132,21 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 				Description: "Custom fields",
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
+			"created": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Created date",
+			},
+			"family": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "IP family, IPv4, or Ipv6",
+			},
+			"last_updated": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Last updated timestamp",
+			},
 		},
 		//	CustomizeDiff: nil,
 	}
@@ -267,30 +282,37 @@ func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) er
 	d.Set("description", prefix.Description)
 	d.Set("custom_fields", flattenCustomFields(prefix))
 	d.Set("is_pool", prefix.IsPool)
-	d.Set("created", prefix.Created)
+	d.Set("created", prefix.Created.String())
 	d.Set("family", prefix.Family)
-	if prefix != nil && prefix.Role != nil {
-		d.Set("role", flatternRoleV247(prefix.Role))
-	}
 	d.Set("last_updated", prefix.LastUpdated.String())
 
+	if prefix != nil && prefix.Role != nil {
+		d.Set("role", prefix.Role.ID)
+	}
+
+	if ppid, ok := d.GetOk("parent_prefix_id"); ok {
+		d.Set("parent_prefix_id", ppid.(int))
+	}
+
 	d.Set("prefix", prefix.Prefix)
-	d.Set("prefix_length", strings.Split(*prefix.Prefix, "/")[1])
+	pl := strings.Split(*prefix.Prefix, "/")[1]
+	prefixLength, _ := strconv.Atoi(pl)
+	d.Set("prefix_length", prefixLength)
 	if prefix != nil && prefix.Site != nil {
-		d.Set("site", flatternSite(prefix.Site))
+		d.Set("site", prefix.Site.ID)
 	}
 	if prefix != nil && prefix.Status != nil {
-		d.Set("status", flatterPrefixStatus(prefix.Status))
+		d.Set("status", prefixStatusIDMapReverse[*prefix.Status.Value])
 	}
 	d.Set("tags", prefix.Tags)
 	if prefix != nil && prefix.Tenant != nil {
-		d.Set("tenant", flatternNestedTenant(prefix.Tenant))
+		d.Set("tenant", prefix.Tenant.ID)
 	}
 	if prefix != nil && prefix.Vlan != nil {
-		d.Set("vlan", flatternNestedVLAN(prefix.Vlan))
+		d.Set("vlan", prefix.Vlan.ID)
 	}
 	if prefix != nil && prefix.Vrf != nil {
-		d.Set("vrf", flatternNestedVRFV247(prefix.Vrf))
+		d.Set("vrf", prefix.Vrf.ID)
 	}
 
 	d.SetId(fmt.Sprintf("%d", prefix.ID))

@@ -8,8 +8,8 @@ build-dev:
 #  @[ "${version}" ] || ( echo ">> please provide version=vX.Y.Z"; exit 1 )
 	go build -o ~/.terraform.d/plugins/terraform-provider-$(PKG_NAME)_${version} .
 
-testacc: fmtcheck
-	TF_ACC=1 go test $(TEST) -v -count $(TEST_COUNT) -parallel 20 $(TESTARGS) -timeout 120m
+#testacc: fmtcheck
+#	TF_ACC=1 go test $(TEST) -v -count $(TEST_COUNT) -parallel 20 $(TESTARGS) -timeout 120m
 
 build: fmtcheck generate
 	go install
@@ -17,8 +17,8 @@ build: fmtcheck generate
 test: fmtcheck generate
 	go test $(TESTARGS) -timeout=30s $(TEST)
 
-#testacc: fmtcheck
-#	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 go test $(TEST) -v $(TESTARGS) -timeout 240m -ldflags="-X=github.com/terraform-providers/terraform-provider-google-beta/version.ProviderVersion=acc"
+testacc: fmtcheck
+	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 go test $(TEST) -v $(TESTARGS) -timeout 240m -ldflags="-X=github.com/fenglyu/terraform-provider-netbox/version.ProviderVersion=acc"
 
 fmt:
 	@echo "==> Fixing source code with gofmt..."

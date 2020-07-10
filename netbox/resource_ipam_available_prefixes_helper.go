@@ -1,6 +1,7 @@
 package netbox
 
 import (
+	"encoding/json"
 	"sort"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -67,6 +68,14 @@ func flatternNestedTenant(nt *models.NestedTenant) []map[string]interface{} {
 			"url":  nt.URL.String(),
 		},
 	}
+}
+
+func jsonfy(rs []map[string]interface{}) string {
+	st, err := json.Marshal(rs)
+	if err != nil {
+		return ""
+	}
+	return string(st)
 }
 
 func flatternNestedVLAN(nv *models.NestedVLAN) []map[string]interface{} {

@@ -1,7 +1,11 @@
 package netbox
 
 import (
+	"context"
 	"fmt"
+	"github.com/fenglyu/go-netbox/netbox/client/ipam"
+	"github.com/fenglyu/go-netbox/netbox/models"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -10,11 +14,11 @@ import (
 )
 
 func TestAccAvaliablePrefixes_basic(t *testing.T) {
-	/* ... potentially existing acceptance testing logic ... */
 	context := map[string]interface{}{
 		"random_prefix_length": randIntRange(t, 16, 30),
 		"random_suffix":        randString(t, 10),
 	}
+
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -34,12 +38,11 @@ func TestAccAvaliablePrefixes_basic(t *testing.T) {
 
 func testAccAvailablePrefixWithParentPrefixIdExample(context map[string]interface{}) string {
 	return Nprintf(`
-	resource "netbox_available_prefixes" "gke-test" {
-		parent_prefix_id = 1
-		prefix_length = %{random_prefix_length}
-		tags = ["test-acc%{random_suffix}-01", "test-acc%{random_suffix}-02", "test-acc%{random_suffix}-03"]
+resource "netbox_available_prefixes" "gke-test" {
+	parent_prefix_id = 71
+	prefix_length = %{random_prefix_length}
+	tags = ["AvailablePrefix-acc%{random_suffix}-01", "AvailablePrefix-acc%{random_suffix}-02", "AvailablePrefix-acc%{random_suffix}-03"]
 }`, context)
-
 }
 
 func testAccCheckAvailablePrefixesDestroyProducer(t *testing.T) func(s *terraform.State) error {
@@ -51,13 +54,32 @@ func testAccCheckAvailablePrefixesDestroyProducer(t *testing.T) func(s *terrafor
 			if strings.HasPrefix(name, "data.") {
 				continue
 			}
+			config := testAccProvider.Meta().(*Config)
+			_, err := sendRequestforPrefix(config, rs)
+			fmt.Println("testAccCheckAvailablePrefixesDestroyProducer: ", err)
 
-			_, err = sendRequest(config, "GET", "", url, nil)
 			if err == nil {
-				return fmt.Errorf("ComputeAddress still exists at %s", url)
+				return fmt.Errorf("Available Prefix still exists")
 			}
 		}
-
 		return nil
 	}
+}
+
+func sendRequestforPrefix(config *Config, rs *terraform.ResourceState) (*models.Prefix, error) {
+	id, err := strconv.Atoi(rs.Primary.Attributes["id"])
+	if err != nil {
+		return nil, err
+	}
+	params := ipam.IpamPrefixesReadParams{
+		ID: int64(id),
+	}
+	params.WithContext(context.Background())
+
+	ipamPrefixesReadOK, err := config.client.Ipam.IpamPrefixesRead(&params, nil)
+	if err != nil || ipamPrefixesReadOK == nil {
+		return nil, fmt.Errorf("There is not prefix with ID %d", id)
+	}
+
+	return ipamPrefixesReadOK.Payload, nil
 }

@@ -100,28 +100,35 @@ func testAccPreCheck(t *testing.T) {
 		t.Fatalf("One of %s must be set for acceptance tests", strings.Join(netboxApiTokenEnvVars, ", "))
 	}
 	if v := multiEnvSearch(netboxHostEnvVars); v == "" {
-		t.Fatalf("One of %s must be set to us-central1-a for acceptance tests", strings.Join(netboxHostEnvVars, ", "))
+		t.Fatalf("One of %s must be set for acceptance tests", strings.Join(netboxHostEnvVars, ", "))
 	}
 	if v := multiEnvSearch(netboxBasePathEnvVars); v == "" {
-		t.Fatalf("One of %s must be set to us-central1-a for acceptance tests", strings.Join(netboxBasePathEnvVars, ", "))
+		t.Fatalf("One of %s must be set for acceptance tests", strings.Join(netboxBasePathEnvVars, ", "))
 	}
 }
 
 func TestAccProviderBasePath_setBasePath(t *testing.T) {
 	t.Parallel()
 
+	context := map[string]interface{}{
+		"random_prefix_length": randIntRange(t, 16, 30),
+		"random_suffix":        randString(t, 10),
+		"basePath":             "/api",
+	}
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckPrefixDestroyProducer(t),
+		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccProviderBasePath_setBasePath("c4a3c627b64fa514e8e0840a94c06b04eb8674d9", "netbox.k8s.me", "/api", "gke-test", randIntRange(t, 18, 30)),
+				Config: testAccProviderBasePath_setBasePath(context),
 			},
 			{
 				ResourceName:      "netbox_available_prefixes.default",
 				ImportState:       true,
 				ImportStateVerify: true,
+				Destroy:           true,
 			},
 		},
 	})
@@ -129,26 +136,36 @@ func TestAccProviderBasePath_setBasePath(t *testing.T) {
 
 func TestAccProviderBasePath_setInvalidBasePath(t *testing.T) {
 	t.Parallel()
-
+	context := map[string]interface{}{
+		"random_prefix_length": randIntRange(t, 16, 30),
+		"random_suffix":        randString(t, 10),
+		"basePath":             fmt.Sprintf("/%s", randString(t, 10)),
+	}
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckPrefixDestroyProducer(t),
+		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccProviderBasePath_setBasePath("https://www.example.com/compute/beta/", randIntRange(t, 18, 30)),
-				ExpectError: regexp.MustCompile("got HTTP response code 404 with body"),
+				Config:      testAccProviderBasePath_setBasePath(context),
+				ExpectError: regexp.MustCompile("Invalid address to set:"),
 			},
 		},
 	})
 }
 
-func testAccProviderBasePath_setBasePath(apiToken, host, basePath, name string, prefixLength int) string {
-	return fmt.Sprintf(`
-	provider "netbox" {
-		api_token = "%s"
-		host      = "%s"
-		base_path = "%s"
-	}
-`, apiToken, basePath, name)
+func testAccProviderBasePath_setBasePath(context map[string]interface{}) string {
+	// Terraform 0.12.* HCL syntax doesn't seem to support
+	return Nprintf(`
+provider "netbox" {
+	base_path = "%{basePath}"
+	request_timeout = "4m"
+}
+
+resource "netbox_available_prefixes" "default" {
+	parent_prefix_id = 71
+	prefix_length = %{random_prefix_length}
+	tags = ["BasePathTest-acc%{random_suffix}-01", "BasePathTest-acc%{random_suffix}-02", "BasePathTest-acc%{random_suffix}-03"]
+}
+`, context)
 }

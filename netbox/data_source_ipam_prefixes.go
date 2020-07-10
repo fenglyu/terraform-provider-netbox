@@ -51,7 +51,7 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 		ipamPrefixesReadOKRes, _ := json.Marshal(&ipamPrefixListBody.Payload.Results)
 		log.Println("ipamPrefixListBody", string(ipamPrefixesReadOKRes))
 		if ipamPrefixListBody == nil || *ipamPrefixListBody.Payload.Count < 1 {
-			return fmt.Errorf("Unknow prefix %s with ID %s, not found", prefix, d.Id())
+			return fmt.Errorf("Unknow prefix %s with ID %s, not found", *prefix.Prefix, d.Id())
 		}
 		prefix = ipamPrefixListBody.Payload.Results[0]
 	}

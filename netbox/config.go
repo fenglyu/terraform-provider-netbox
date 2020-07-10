@@ -32,6 +32,12 @@ var (
 		"reserved":   prefixStatusReserved,
 		"deprecated": prefixStatusDeprecated,
 	}
+	prefixStatusIDMapReverse = map[int64]string{
+		prefixStatusContainer:  "container",
+		prefixStatusActive:     "active",
+		prefixStatusReserved:   "reserved",
+		prefixStatusDeprecated: "deprecated",
+	}
 )
 
 // Config support all configurations for provider
