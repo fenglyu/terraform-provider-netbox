@@ -28,9 +28,10 @@ func TestAccAvaliablePrefixes_basic(t *testing.T) {
 				Config: testAccAvailablePrefixWithParentPrefixIdExample(context),
 			},
 			{
-				ResourceName:      "netbox_available_prefixes.gke-test",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "netbox_available_prefixes.gke-test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"parent_prefix_id"},
 			},
 		},
 	})
@@ -39,7 +40,7 @@ func TestAccAvaliablePrefixes_basic(t *testing.T) {
 func testAccAvailablePrefixWithParentPrefixIdExample(context map[string]interface{}) string {
 	return Nprintf(`
 resource "netbox_available_prefixes" "gke-test" {
-	parent_prefix_id = 71
+	parent_prefix_id = 125
 	prefix_length = %{random_prefix_length}
 	tags = ["AvailablePrefix-acc%{random_suffix}-01", "AvailablePrefix-acc%{random_suffix}-02", "AvailablePrefix-acc%{random_suffix}-03"]
 }`, context)

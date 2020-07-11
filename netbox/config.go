@@ -2,8 +2,10 @@ package netbox
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/fenglyu/go-netbox/netbox/client"
@@ -74,8 +76,37 @@ func (c *Config) LoadAndValidate(ctx context.Context) error {
 	if c.ApiToken != "" {
 		t.DefaultAuthentication = runtimeclient.APIKeyAuth(AuthHeaderName, "header", fmt.Sprintf(AuthHeaderFormat, c.ApiToken))
 	}
-	//t.SetDebug(true)
+	t.SetDebug(false)
 	c.client = client.New(t, strfmt.Default)
 
+	if err := ApiAccessTest(c.Host, c.BasePath, c.ApiToken); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ApiAccessTest(host, path, token string) error {
+	//Test url example: "http://netbox.k8s.me/api/"
+	url := fmt.Sprintf("http://%s%s", host, path)
+	method := "GET"
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
+	}
+	client := &http.Client{Transport: tr}
+	req, err := http.NewRequest(method, url, nil)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Token %s", token))
+
+	res, err := client.Do(req)
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		return fmt.Errorf(res.Status)
+	}
 	return nil
 }

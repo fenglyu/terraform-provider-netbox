@@ -280,7 +280,7 @@ func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) er
 	log.Println("[INFO] resourceIpamPrefixesRead ", prefix)
 	//d.Set("id", prefix.ID)
 	d.Set("description", prefix.Description)
-	d.Set("custom_fields", flattenCustomFields(prefix))
+	d.Set("custom_fields", prefix.CustomFields)
 	d.Set("is_pool", prefix.IsPool)
 	d.Set("created", prefix.Created.String())
 	d.Set("family", prefix.Family)
@@ -290,9 +290,11 @@ func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) er
 		d.Set("role", prefix.Role.ID)
 	}
 
-	if ppid, ok := d.GetOk("parent_prefix_id"); ok {
-		d.Set("parent_prefix_id", ppid.(int))
-	}
+	/*
+		if ppid, ok := d.GetOk("parent_prefix_id"); ok {
+			d.Set("parent_prefix_id", ppid.(int))
+		}
+	*/
 
 	d.Set("prefix", prefix.Prefix)
 	pl := strings.Split(*prefix.Prefix, "/")[1]

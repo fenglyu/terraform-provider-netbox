@@ -5,7 +5,6 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -114,6 +113,7 @@ func TestAccProviderBasePath_setBasePath(t *testing.T) {
 		"random_prefix_length": randIntRange(t, 16, 30),
 		"random_suffix":        randString(t, 10),
 		"basePath":             "/api",
+		"host":                 "netbox.k8s.me",
 	}
 
 	resource.Test(t, resource.TestCase{
@@ -125,10 +125,10 @@ func TestAccProviderBasePath_setBasePath(t *testing.T) {
 				Config: testAccProviderBasePath_setBasePath(context),
 			},
 			{
-				ResourceName:      "netbox_available_prefixes.default",
-				ImportState:       true,
-				ImportStateVerify: true,
-				Destroy:           true,
+				ResourceName:            "netbox_available_prefixes.default",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"parent_prefix_id"},
 			},
 		},
 	})
@@ -137,35 +137,42 @@ func TestAccProviderBasePath_setBasePath(t *testing.T) {
 func TestAccProviderBasePath_setInvalidBasePath(t *testing.T) {
 	t.Parallel()
 	context := map[string]interface{}{
-		"random_prefix_length": randIntRange(t, 16, 30),
-		"random_suffix":        randString(t, 10),
-		"basePath":             fmt.Sprintf("/%s", randString(t, 10)),
+		"basePath": fmt.Sprintf("/%s", randString(t, 10)),
+		"host":     "www.example.com",
 	}
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config:      testAccProviderBasePath_setBasePath(context),
-				ExpectError: regexp.MustCompile("Invalid address to set:"),
+				Config: testAccProviderBasePath_setInvalidBasePath(context),
+				//ExpectError: regexp.MustCompile("404 Not Found"),
 			},
 		},
 	})
 }
 
 func testAccProviderBasePath_setBasePath(context map[string]interface{}) string {
-	// Terraform 0.12.* HCL syntax doesn't seem to support
 	return Nprintf(`
 provider "netbox" {
+  	host      = "%{host}"
 	base_path = "%{basePath}"
 	request_timeout = "4m"
 }
 
 resource "netbox_available_prefixes" "default" {
-	parent_prefix_id = 71
+	parent_prefix_id = 125
 	prefix_length = %{random_prefix_length}
 	tags = ["BasePathTest-acc%{random_suffix}-01", "BasePathTest-acc%{random_suffix}-02", "BasePathTest-acc%{random_suffix}-03"]
+}
+`, context)
+}
+
+func testAccProviderBasePath_setInvalidBasePath(context map[string]interface{}) string {
+	return Nprintf(`
+provider "netbox" {
+  	host      = "%{host}"
+	base_path = "%{basePath}"
 }
 `, context)
 }
