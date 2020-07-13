@@ -68,14 +68,14 @@ func (c *Config) LoadAndValidate(ctx context.Context) error {
 	}
 
 	secureSSL := true
-	schema := []string{"https", "http"}
+	schemes := []string{"https", "http"}
 
 	httpClient, err := runtimeclient.TLSClient(runtimeclient.TLSClientOptions{InsecureSkipVerify: secureSSL})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	t := runtimeclient.NewWithClient(c.Host, c.BasePath, schema, httpClient)
+	t := runtimeclient.NewWithClient(c.Host, c.BasePath, schemes, httpClient)
 	log.Printf("[INFO] Instantiating http client for host %s and path %s", c.Host, c.BasePath)
 	if c.ApiToken != "" {
 		t.DefaultAuthentication = runtimeclient.APIKeyAuth(AuthHeaderName, "header", fmt.Sprintf(AuthHeaderFormat, c.ApiToken))
@@ -83,16 +83,36 @@ func (c *Config) LoadAndValidate(ctx context.Context) error {
 	t.SetDebug(false)
 	c.client = client.New(t, strfmt.Default)
 
-	if err := ApiAccessTest(c.Host, c.BasePath, c.ApiToken, schema, secureSSL); err != nil {
+	if err := ApiAccessTest(c.Host, c.BasePath, c.ApiToken, schemes, secureSSL); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func ApiAccessTest(host, path, token string, schema []string, secureSSL bool) error {
+func selectScheme(schemes []string) string {
+	schLen := len(schemes)
+	if schLen == 0 {
+		return ""
+	}
+
+	scheme := schemes[0]
+	// prefer https, but skip when not possible
+	if scheme != "https" && schLen > 1 {
+		for _, sch := range schemes {
+			if sch == "https" {
+				scheme = sch
+				break
+			}
+		}
+	}
+	return scheme
+}
+
+func ApiAccessTest(host, path, token string, schemes []string, secureSSL bool) error {
 	//Test url example: "http://netbox.k8s.me/api/"
-	url := fmt.Sprintf("http://%s%s", host, path)
+
+	url := fmt.Sprintf("%s://%s%s", selectScheme(schemes), host, path)
 	method := "GET"
 
 	tr := &http.Transport{
