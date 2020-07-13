@@ -1,4 +1,5 @@
 TEST?=$$(go list ./...)
+WEBSITE_REPO=github.com/hashicorp/terraform-website
 PKG_NAME=netbox
 DIR_NAME=netbox
 
@@ -8,8 +9,8 @@ build-dev:
 #  @[ "${version}" ] || ( echo ">> please provide version=vX.Y.Z"; exit 1 )
 	go build -o ~/.terraform.d/plugins/terraform-provider-$(PKG_NAME)_${version} .
 
-testacc: fmtcheck
-	TF_ACC=1 go test $(TEST) -v -count $(TEST_COUNT) -parallel 20 $(TESTARGS) -timeout 120m
+#testacc: fmtcheck
+#	TF_ACC=1 go test $(TEST) -v -count $(TEST_COUNT) -parallel 20 $(TESTARGS) -timeout 120m
 
 build: fmtcheck generate
 	go install
@@ -17,8 +18,8 @@ build: fmtcheck generate
 test: fmtcheck generate
 	go test $(TESTARGS) -timeout=30s $(TEST)
 
-#testacc: fmtcheck
-#	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 go test $(TEST) -v $(TESTARGS) -timeout 240m -ldflags="-X=github.com/terraform-providers/terraform-provider-google-beta/version.ProviderVersion=acc"
+testacc: fmtcheck
+	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 go test $(TEST) -v $(TESTARGS) -timeout 240m -ldflags="-X=github.com/fenglyu/terraform-provider-netbox/version.ProviderVersion=acc"
 
 fmt:
 	@echo "==> Fixing source code with gofmt..."
@@ -49,7 +50,22 @@ test-compile:
 	fi
 	go test -c $(TEST) $(TESTARGS)
 
+website:
+ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
+	echo "$(WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), get-ting..."
+	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
+endif
+	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
 
+website-test:
+ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
+	echo "$(WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), get-ting..."
+	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
+endif
+	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider-test PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
 
-.PHONY: build-dev build test  vet fmt fmtcheck lint tools errcheck test-compile generate
+docscheck:
+	@sh -c "'$(CURDIR)/scripts/docscheck.sh'"
+
+.PHONY: build-dev build test  vet fmt fmtcheck lint tools errcheck test-compile generate website website-test docscheck generate
 

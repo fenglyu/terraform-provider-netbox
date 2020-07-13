@@ -1,6 +1,7 @@
 package netbox
 
 import (
+	"encoding/json"
 	"sort"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -8,6 +9,7 @@ import (
 	"github.com/fenglyu/go-netbox/netbox/models"
 )
 
+/*
 func flatternFamily(f *models.PrefixFamily) []map[string]interface{} {
 	if f == nil {
 		return nil
@@ -18,6 +20,7 @@ func flatternFamily(f *models.PrefixFamily) []map[string]interface{} {
 	}}
 }
 
+// nested_role struct for netbox v2.8.6
 func flatternRole(nr *models.NestedRole) []map[string]interface{} {
 	return []map[string]interface{}{{
 		"id":           nr.ID,
@@ -26,6 +29,17 @@ func flatternRole(nr *models.NestedRole) []map[string]interface{} {
 		"slug":         nr.Slug,
 		"url":          nr.URL.String(),
 		"vlan_count":   nr.VlanCount,
+	}}
+}
+*/
+
+// NestedRole struct for netbox v2.4.7
+func flatternRoleV247(nr *models.NestedRole) []map[string]interface{} {
+	return []map[string]interface{}{{
+		"id":   nr.ID,
+		"name": nr.Name,
+		"slug": nr.Slug,
+		"url":  nr.URL.String(),
 	}}
 }
 
@@ -56,6 +70,14 @@ func flatternNestedTenant(nt *models.NestedTenant) []map[string]interface{} {
 	}
 }
 
+func jsonfy(rs []map[string]interface{}) string {
+	st, err := json.Marshal(rs)
+	if err != nil {
+		return ""
+	}
+	return string(st)
+}
+
 func flatternNestedVLAN(nv *models.NestedVLAN) []map[string]interface{} {
 	return []map[string]interface{}{{
 		"id":           nv.ID,
@@ -66,6 +88,17 @@ func flatternNestedVLAN(nv *models.NestedVLAN) []map[string]interface{} {
 	}}
 }
 
+// NestedVRF struct for netbox v2.4.7
+func flatternNestedVRFV247(nv *models.NestedVRF) []map[string]interface{} {
+	return []map[string]interface{}{{
+		"id":   nv.ID,
+		"name": nv.Name,
+		"url":  nv.URL.String(),
+		"rd":   nv.Rd,
+	}}
+}
+
+/*
 func flatternNestedVRF(nv *models.NestedVRF) []map[string]interface{} {
 	return []map[string]interface{}{{
 		"id":           nv.ID,
@@ -75,6 +108,8 @@ func flatternNestedVRF(nv *models.NestedVRF) []map[string]interface{} {
 		"rd":           nv.Rd,
 	}}
 }
+*/
+
 func flattenCustomFields(p *models.Prefix) map[string]string {
 	cf := p.CustomFields.(map[string]interface{})
 	cfMap := make(map[string]string)
