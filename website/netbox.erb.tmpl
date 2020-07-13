@@ -1,0 +1,55 @@
+<% wrap_layout :inner do %>
+  <% content_for :sidebar do %>
+  <div class="docs-sidebar hidden-print affix-top" role="complementary">
+  <ul class="nav docs-sidenav">
+    <li>
+    <a class="back" href="/docs/providers/index.html">All Providers</a>
+    </li>
+
+    <li>
+      <a href="#">Netbox Provider Guides</a>
+      <ul class="nav">
+        <li>
+          <a href="/docs/providers/netbox/guides/getting_started.html">Getting Started Guide</a>
+        </li>
+      </ul>
+    </li>
+
+{{ range $key, $value := . }}
+    <li>
+    <a href="#">{{ $key }}</a>
+    <ul class="nav">
+  {{- if ne (len $value.DataSources) 0 }}
+      <li>
+        <a href="#">Data Sources</a>
+        <ul class="nav nav-auto-expand">
+    {{ range $value.DataSources }}
+          <li>
+          <a href="/docs/providers/netbox/d/{{ .Filename }}">{{ .Resource }}</a>
+          </li>
+    {{ end }}
+        </ul>
+      </li>
+  {{- end }}
+  {{- if ne (len $value.Resources) 0 }}
+      <li>
+        <a href="#">Resources</a>
+        <ul class="nav nav-auto-expand">
+  {{ range $value.Resources }}
+          <li>
+          <a href="/docs/providers/netbox/r/{{ .Filename }}">{{ .Resource }}</a>
+          </li>
+  {{ end }}
+        </ul>
+      </li>
+  {{- end }}
+    </ul>
+    </li>
+{{ end }}
+
+  </ul>
+</div>
+  <% end %>
+
+<%= yield %>
+  <% end %>

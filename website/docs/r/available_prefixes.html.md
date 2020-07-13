@@ -8,8 +8,8 @@ description: |-
 ---
 
 # netbox\_available\_prefixes
-Carve a prefix `A prefix is an IPv4 or IPv6 network and mask expressed in CIDR notation (e.g. 192.0.2.0/24)` based
-on a prarent prefix or its ID.
+Carve a prefix based on a prarent prefix or its ID.
+>A prefix is an IPv4 or IPv6 network and mask expressed in CIDR notation (e.g. 192.0.2.0/24) 
 
 ## Example Usage
 ```hcl
@@ -40,11 +40,13 @@ resource "netbox_available_prefixes" "default" {
 ## Argument Reference
 
 The following arguments are supported:
+
 * `parent_prefix`       - (Required) Crave available prefixes under the parent_prefix.
 * `parent_prefix_id`    - (Required) A UID identifying the prefix under which available prefix is craved.
 * `prefix_length`       - (Required) The mask expressed in CIDR notation, E.G. 24 in 192.0.2.0/24.
-* `status`              - (Optional) Each prefix can be assigned a status. It's one of statuses "container", "active", "reserved", "deprecated". Defaults to "active".
-```hcl
+* `status`              - (Optional) Each prefix can be assigned a status. It's one of statuses **"container", "active", "reserved", "deprecated". Defaults to "active"**.
+
+```
 * Container - A summary of child prefixes
 * Active - Provisioned and in use
 * Reserved - Designated for future use
@@ -75,6 +77,7 @@ exported:
 ~> **Note:** The fields `parent_prefix_id` and `vrf` cannot be imported automatically. The API doesn't return this information. If you are setting one of these fields in your config, you will need to update your state manually after importing the resource.
 
 Prefix can be imported by its id, e.g.
+
 ```hcl
 $ terraform import netbox_available_prefixes.foo 911
 ```

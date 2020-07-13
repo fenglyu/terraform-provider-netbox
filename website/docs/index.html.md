@@ -1,5 +1,5 @@
 ---
-layout: "google"
+layout: "netbox"
 page_title: "Provider: Netbox"
 sidebar_current: "docs-netbox-provider-x"
 description: |-
@@ -22,9 +22,6 @@ provider "netbox" {
   # request_timeout = "4m"
 }
 ```
-
-See the [provider reference](/docs/providers/google/guides/provider_reference.html)
-for more details on authentication or otherwise configuring the provider.
 
 
 ## Features and Bug Requests

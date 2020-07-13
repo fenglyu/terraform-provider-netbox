@@ -40,8 +40,6 @@ func TestAccDataSourceAvailablePrefixes_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("data.netbox_available_prefixes.bar", "status", "active"),
 					resource.TestCheckResourceAttr("data.netbox_available_prefixes.bar", "family", "4"),
 					resource.TestCheckResourceAttr("data.netbox_available_prefixes.bar", "description", "testAccDataSourceComputeInstanceConfig description"),
-					// Tags to be tested
-					//resource.TestCheckResourceAttr("data.netbox_available_prefixes.bar", "tags", "[\"datasource-AvailablePrefix-acc01\", \"datasource-AvailablePrefix-acc02\", \"datasource-AvailablePrefix-acc02\"]"),
 				),
 			},
 		},
