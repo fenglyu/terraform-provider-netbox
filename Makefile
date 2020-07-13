@@ -1,4 +1,5 @@
 TEST?=$$(go list ./...)
+WEBSITE_REPO=github.com/hashicorp/terraform-website
 PKG_NAME=netbox
 DIR_NAME=netbox
 
@@ -49,7 +50,22 @@ test-compile:
 	fi
 	go test -c $(TEST) $(TESTARGS)
 
+website:
+ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
+	echo "$(WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), get-ting..."
+	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
+endif
+	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
 
+website-test:
+ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
+	echo "$(WEBSITE_REPO) not found in your GOPATH (necessary for layouts and assets), get-ting..."
+	git clone https://$(WEBSITE_REPO) $(GOPATH)/src/$(WEBSITE_REPO)
+endif
+	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider-test PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
 
-.PHONY: build-dev build test  vet fmt fmtcheck lint tools errcheck test-compile generate
+docscheck:
+	@sh -c "'$(CURDIR)/scripts/docscheck.sh'"
+
+.PHONY: build-dev build test  vet fmt fmtcheck lint tools errcheck test-compile generate website website-test docscheck generate
 

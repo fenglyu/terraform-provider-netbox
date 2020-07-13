@@ -73,12 +73,12 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 				Optional:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.IntBetween(1, 128),
-				Description:  "The netmask in number form",
+				Description:  "The mask in integer form",
 			},
 			"role": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "The primary function of this prefix  ",
+				Description: "Role",
 			},
 			"site": {
 				Type:        schema.TypeString,
@@ -290,11 +290,9 @@ func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) er
 		d.Set("role", prefix.Role.ID)
 	}
 
-	/*
-		if ppid, ok := d.GetOk("parent_prefix_id"); ok {
-			d.Set("parent_prefix_id", ppid.(int))
-		}
-	*/
+	if ppid, ok := d.GetOk("parent_prefix_id"); ok {
+		d.Set("parent_prefix_id", ppid.(int))
+	}
 
 	d.Set("prefix", prefix.Prefix)
 	pl := strings.Split(*prefix.Prefix, "/")[1]

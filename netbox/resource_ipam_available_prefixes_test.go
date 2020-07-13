@@ -28,10 +28,12 @@ func TestAccAvaliablePrefixes_basic(t *testing.T) {
 				Config: testAccAvailablePrefixWithParentPrefixIdExample(context),
 			},
 			{
-				ResourceName:            "netbox_available_prefixes.gke-test",
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"parent_prefix_id"},
+				ResourceName:      "netbox_available_prefixes.gke-test",
+				ImportState:       true,
+				ImportStateVerify: true,
+				// parent_prefix_id is the parent which we can't easily get without hacking
+				// vrf is not returned via GET "http://netbox.k8s.me/api/ipam/prefixes/{ID}/"
+				ImportStateVerifyIgnore: []string{"parent_prefix_id", "vrf"},
 			},
 		},
 	})
@@ -42,6 +44,8 @@ func testAccAvailablePrefixWithParentPrefixIdExample(context map[string]interfac
 resource "netbox_available_prefixes" "gke-test" {
 	parent_prefix_id = 125
 	prefix_length = %{random_prefix_length}
+	vrf = 1
+   	tenant = 1
 	tags = ["AvailablePrefix-acc%{random_suffix}-01", "AvailablePrefix-acc%{random_suffix}-02", "AvailablePrefix-acc%{random_suffix}-03"]
 }`, context)
 }

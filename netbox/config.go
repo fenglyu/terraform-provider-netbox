@@ -67,11 +67,15 @@ func (c *Config) LoadAndValidate(ctx context.Context) error {
 		c.Host = NetboxDefaultHost
 	}
 
-	httpClient, err := runtimeclient.TLSClient(runtimeclient.TLSClientOptions{InsecureSkipVerify: true})
+	secureSSL := true
+	schema := []string{"https", "http"}
+
+	httpClient, err := runtimeclient.TLSClient(runtimeclient.TLSClientOptions{InsecureSkipVerify: secureSSL})
 	if err != nil {
 		log.Fatal(err)
 	}
-	t := runtimeclient.NewWithClient(c.Host, c.BasePath, []string{"https", "http"}, httpClient)
+
+	t := runtimeclient.NewWithClient(c.Host, c.BasePath, schema, httpClient)
 	log.Printf("[INFO] Instantiating http client for host %s and path %s", c.Host, c.BasePath)
 	if c.ApiToken != "" {
 		t.DefaultAuthentication = runtimeclient.APIKeyAuth(AuthHeaderName, "header", fmt.Sprintf(AuthHeaderFormat, c.ApiToken))
@@ -79,20 +83,20 @@ func (c *Config) LoadAndValidate(ctx context.Context) error {
 	t.SetDebug(false)
 	c.client = client.New(t, strfmt.Default)
 
-	if err := ApiAccessTest(c.Host, c.BasePath, c.ApiToken); err != nil {
+	if err := ApiAccessTest(c.Host, c.BasePath, c.ApiToken, schema, secureSSL); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func ApiAccessTest(host, path, token string) error {
+func ApiAccessTest(host, path, token string, schema []string, secureSSL bool) error {
 	//Test url example: "http://netbox.k8s.me/api/"
 	url := fmt.Sprintf("http://%s%s", host, path)
 	method := "GET"
 
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: secureSSL},
 	}
 	client := &http.Client{Transport: tr}
 	req, err := http.NewRequest(method, url, nil)
@@ -103,6 +107,9 @@ func ApiAccessTest(host, path, token string) error {
 	req.Header.Add("Authorization", fmt.Sprintf("Token %s", token))
 
 	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
