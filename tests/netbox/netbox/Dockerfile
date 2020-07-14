@@ -30,7 +30,7 @@ RUN update-ca-trust extract
 
 RUN pip3 install -i http://pip.battle.net:6081/api/pypi/pip-virtual/simple --trusted-host pip.battle.net virtualenv && \
     python3 -m virtualenv --python=/usr/bin/python3 /opt/netbox/venv
-UN /opt/netbox/venv/bin/pip install -i http://pip.battle.net:6081/api/pypi/pip-virtual/simple --trusted-host pip.battle.net -r /opt/netbox/requirements.txt
+RUN /opt/netbox/venv/bin/pip install -i http://pip.battle.net:6081/api/pypi/pip-virtual/simple --trusted-host pip.battle.net -r /opt/netbox/requirements.txt
 
 
 RUN  cp ./configuration.py /opt/netbox/netbox/netbox/

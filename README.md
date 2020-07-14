@@ -6,7 +6,7 @@
 make build-dev version=v0.0.1 
 ```
 
-## Run an simple example
+## Run an simple example 
 ```shell script
  % cd examples/simple
  % terraform init
@@ -41,15 +41,13 @@ pkg
 
 ```
 
-
-## Test
+## Running provider acc test 
 ```shell script
 
 export NETBOX_TOKEN=""                                                                                                                                   ✘ 130 
 export NETBOX_HOST=""
 export NETBOX_BASE_PATH="/api"
 
-flv@genji ~/dev/go/terraform-plugins/terraform-provider-netbox
  % make testacc                                                                                                                                                                                       ✘ 2 
 ==> Checking source code against gofmt...
 ==> Checking that code complies with gofmt requirements...
@@ -74,6 +72,5 @@ testAccCheckAvailablePrefixesDestroyProducer:  There is not prefix with ID 186
 PASS
 ok      github.com/fenglyu/terraform-provider-netbox/netbox     1.055s
 ?       github.com/fenglyu/terraform-provider-netbox/version    [no test files]
-flv@genji ~/dev/go/terraform-plugins/terraform-provider-netbox
 
 ```
