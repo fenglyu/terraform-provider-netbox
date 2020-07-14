@@ -1,28 +1,34 @@
-terraform {
-  required_providers {
-    netbox = "~> 0.0.1"
-  }
-}
-
 provider "netbox" {
-  api_token = "434476c51e79b0badfad4afcd9a64b4dede1adb9"
-  host      = "netbox.k8s.me"
-  base_path      = "/api"
-  // Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
-  // see time.ParseDuration for time unit
   request_timeout = "4m"
 }
 
 resource "netbox_available_prefixes" "gke-pods" {
-  // example schema attribute
-  //parent_prefix = "10.0.4.0/24"
-  parent_prefix_id = 39
-  prefix_length = 29
-  is_pool = true
-  status = "active"
-  vrf = 1
-  tenant = 1
-  description = "cidr for gke-pods"
-  tags = ["k8s", "gke", "gke-pods"]
+  #parent_prefix = "10.0.4.0/24"
+  parent_prefix_id = 9480
+  prefix_length    = 29
+  is_pool          = false
+  status           = "active"
+
+  ##vrf = 0
+  tenant           = "cloud"
+  role             = "Development"
+  site             = "gcp" 
+  description = "test/cloud/flv-test-0 || usw2-pri-gke-nodes"
+  tags        = ["k8s", "gke", "gke-pods", "test01", "test02"]
+
+  custom_fields    = {
+      helpers      = ""
+      ipv4_acl_in  = ""
+      ipv4_acl_out = ""
+  }
 
 }
+
+output "available_prefix" {
+  value = netbox_available_prefixes.gke-pods.prefix
+}
+
+output "available_prefix_id" {
+  value = netbox_available_prefixes.gke-pods.id
+}
+

@@ -3,3 +3,4 @@
 **/.terraform
 **/*.log
 **/terraform.tfstate*
+pkg/
