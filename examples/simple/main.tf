@@ -12,7 +12,7 @@ resource "netbox_available_prefixes" "gke-pods" {
   // example schema attribute
   //parent_prefix = "10.0.4.0/24"
   parent_prefix_id = 125
-  prefix_length    = 28
+  prefix_length    = 27
   is_pool          = true
   status           = "active"
 
