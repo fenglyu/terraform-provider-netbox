@@ -21,7 +21,16 @@ resource "netbox_available_prefixes" "default" {
   status           = "active"
   description = "foo bar"
   tags        = ["foo", "bar"]
-}
+
+  tenant           = "foo"
+  role             = "bar"
+  site             = "foo" 
+
+  custom_fields    = {
+      helpers      = ""
+      ipv4_acl_in  = ""
+      ipv4_acl_out = ""
+  }
 ```
 
 ```hcl
@@ -31,6 +40,10 @@ resource "netbox_available_prefixes" "default" {
   prefix_length    = 23
   is_pool          = false
   status           = "active"
+
+  tenant           = "foo"
+  role             = "bar"
+  site             = "foo" 
   description = "foo bar"
   tags        = ["foo", "bar"]
 }
