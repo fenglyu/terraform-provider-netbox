@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/fenglyu/go-netbox/netbox/client"
@@ -40,6 +41,8 @@ var (
 		prefixStatusReserved:   "reserved",
 		prefixStatusDeprecated: "deprecated",
 	}
+
+	NetboxApigeneralQueryLimit int64 = 0
 )
 
 // Config support all configurations for provider
@@ -67,10 +70,20 @@ func (c *Config) LoadAndValidate(ctx context.Context) error {
 		c.Host = NetboxDefaultHost
 	}
 
-	secureSSL := true
-	schemes := []string{"https", "http"}
+	InsecureSkipVerify := true
+	if v := os.Getenv("HTTPS_INSECURE_SKIP_VERIFY"); v != "" {
+		switch v {
+		case "true":
+			InsecureSkipVerify = true
+		case "false":
+			InsecureSkipVerify = false
+		default:
+			break
+		}
+	}
 
-	httpClient, err := runtimeclient.TLSClient(runtimeclient.TLSClientOptions{InsecureSkipVerify: secureSSL})
+	schemes := []string{"https", "http"}
+	httpClient, err := runtimeclient.TLSClient(runtimeclient.TLSClientOptions{InsecureSkipVerify: InsecureSkipVerify})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -80,10 +93,10 @@ func (c *Config) LoadAndValidate(ctx context.Context) error {
 	if c.ApiToken != "" {
 		t.DefaultAuthentication = runtimeclient.APIKeyAuth(AuthHeaderName, "header", fmt.Sprintf(AuthHeaderFormat, c.ApiToken))
 	}
-	t.SetDebug(false)
+	//t.SetDebug(true)
 	c.client = client.New(t, strfmt.Default)
 
-	if err := ApiAccessTest(c.Host, c.BasePath, c.ApiToken, schemes, secureSSL); err != nil {
+	if err := ApiAccessTest(c.Host, c.BasePath, c.ApiToken, schemes, InsecureSkipVerify); err != nil {
 		return err
 	}
 
@@ -109,14 +122,14 @@ func selectScheme(schemes []string) string {
 	return scheme
 }
 
-func ApiAccessTest(host, path, token string, schemes []string, secureSSL bool) error {
+func ApiAccessTest(host, path, token string, schemes []string, InsecureSkipVerify bool) error {
 	//Test url example: "http://netbox.k8s.me/api/"
 
 	url := fmt.Sprintf("%s://%s%s", selectScheme(schemes), host, path)
 	method := "GET"
 
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: secureSSL},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: InsecureSkipVerify},
 	}
 	client := &http.Client{Transport: tr}
 	req, err := http.NewRequest(method, url, nil)

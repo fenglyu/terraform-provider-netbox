@@ -161,7 +161,7 @@ provider "netbox" {
 }
 
 resource "netbox_available_prefixes" "default" {
-	parent_prefix_id = 125
+	parent_prefix_id = 302
 	prefix_length = %{random_prefix_length}
 	tags = ["BasePathTest-acc%{random_suffix}-01", "BasePathTest-acc%{random_suffix}-02", "BasePathTest-acc%{random_suffix}-03"]
 }

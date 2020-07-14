@@ -89,7 +89,11 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 	d.Set("last_updated", prefix.LastUpdated.String())
 
 	if prefix != nil && prefix.Role != nil {
-		d.Set("role", prefix.Role.ID)
+		d.Set("role", prefix.Role.Name)
+	}
+
+	if ppid, ok := d.GetOk("parent_prefix_id"); ok {
+		d.Set("parent_prefix_id", ppid.(int))
 	}
 
 	d.Set("prefix", prefix.Prefix)
@@ -97,20 +101,20 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 	prefixLength, _ := strconv.Atoi(pl)
 	d.Set("prefix_length", prefixLength)
 	if prefix != nil && prefix.Site != nil {
-		d.Set("site", prefix.Site.ID)
+		d.Set("site", prefix.Site.Name)
 	}
 	if prefix != nil && prefix.Status != nil {
 		d.Set("status", prefixStatusIDMapReverse[*prefix.Status.Value])
 	}
 	d.Set("tags", prefix.Tags)
 	if prefix != nil && prefix.Tenant != nil {
-		d.Set("tenant", prefix.Tenant.ID)
+		d.Set("tenant", prefix.Tenant.Name)
 	}
 	if prefix != nil && prefix.Vlan != nil {
-		d.Set("vlan", prefix.Vlan.ID)
+		d.Set("vlan", prefix.Vlan.Name)
 	}
 	if prefix != nil && prefix.Vrf != nil {
-		d.Set("vrf", prefix.Vrf.ID)
+		d.Set("vrf", prefix.Vrf.Name)
 	}
 
 	d.SetId(fmt.Sprintf("%d", prefix.ID))
