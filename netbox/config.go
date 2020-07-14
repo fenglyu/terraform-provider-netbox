@@ -41,6 +41,8 @@ var (
 		prefixStatusReserved:   "reserved",
 		prefixStatusDeprecated: "deprecated",
 	}
+
+	NetboxApigeneralQueryLimit int64 = 0
 )
 
 // Config support all configurations for provider
@@ -91,7 +93,7 @@ func (c *Config) LoadAndValidate(ctx context.Context) error {
 	if c.ApiToken != "" {
 		t.DefaultAuthentication = runtimeclient.APIKeyAuth(AuthHeaderName, "header", fmt.Sprintf(AuthHeaderFormat, c.ApiToken))
 	}
-	t.SetDebug(false)
+	//t.SetDebug(true)
 	c.client = client.New(t, strfmt.Default)
 
 	if err := ApiAccessTest(c.Host, c.BasePath, c.ApiToken, schemes, InsecureSkipVerify); err != nil {

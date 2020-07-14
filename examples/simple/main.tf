@@ -11,15 +11,19 @@ provider "netbox" {
 resource "netbox_available_prefixes" "gke-pods" {
   // example schema attribute
   //parent_prefix = "10.0.4.0/24"
-  parent_prefix_id = 125
+  parent_prefix_id = 302
   prefix_length    = 27
-  is_pool          = true
+  is_pool          = false
   status           = "active"
 
-  #vrf = 0
-  tenant = 1
-  description = "cidr for gke-pods, Hello, My friend"
-  tags        = ["k8s", "gke", "gke-pods", "test01", "test02"]
+  #vrf =
+  role = "cloudera"
+  site = "se1"
+  vlan = "gcp"
+  //vrf = "activision"
+  tenant = "cloud"
+  description = "The one and the only who knows more than anybody"
+  tags        = ["test01", "test02", "test123"]
 }
 
 output "available_prefix" {
