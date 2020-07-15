@@ -25,6 +25,7 @@ require (
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mitchellh/cli v1.1.1 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
+	github.com/mitchellh/gox v1.0.1 // indirect
 	github.com/posener/complete v1.2.3 // indirect
 	github.com/spf13/afero v1.3.0 // indirect
 	github.com/terraform-providers/terraform-provider-random v0.0.0-20190925211435-95c131714b03

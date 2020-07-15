@@ -2,18 +2,27 @@ TEST?=$$(go list ./...)
 WEBSITE_REPO=github.com/hashicorp/terraform-website
 PKG_NAME=netbox
 DIR_NAME=netbox
+XC_ARCH=amd64
+XC_OS=linux darwin windows
+GIT_COMMIT=$$(git rev-parse HEAD)
+LD_FLAGS=-s -w
 
 default: build
 
-build-dev:
-#  @[ "${version}" ] || ( echo ">> please provide version=vX.Y.Z"; exit 1 )
-	go build -o ~/.terraform.d/plugins/terraform-provider-$(PKG_NAME)_${version} .
+prep:
+	@test ! -d pkg && mkdir pkg || true
 
-#testacc: fmtcheck
-#	TF_ACC=1 go test $(TEST) -v -count $(TEST_COUNT) -parallel 20 $(TESTARGS) -timeout 120m
+gox:
+	@echo "==> Installing gox..."
+	@go get github.com/mitchellh/gox
 
-build: fmtcheck generate
-	go install
+build-dev: fmtcheck generate
+    #@[ -z "${version}" ] || ( echo ">> please provide version=vX.Y.Z"; exit 1 )
+	go build  -ldflags="-X main.GitCommit=${GIT_COMMIT}" -o ~/.terraform.d/plugins/terraform-provider-$(PKG_NAME)_${version} .
+
+build: fmtcheck generate prep gox
+	@echo "==> Building..."
+	CGO_ENABLED=0 gox -os="$(XC_OS)" -arch="$(XC_ARCH)" -ldflags "$(LD_FLAGS)" -output "pkg/{{.OS}}_{{.Arch}}/terraform-provider-$(PKG_NAME)_${version}" .
 
 test: fmtcheck generate
 	go test $(TESTARGS) -timeout=30s $(TEST)

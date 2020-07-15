@@ -13,6 +13,35 @@ make build-dev version=v0.0.1
 
 ```
 
+## Build for release
+```
+ % make  build version=v0.0.1
+==> Checking source code against gofmt...
+==> Checking that code complies with gofmt requirements...
+go generate  ./...
+==> Installing gox...
+==> Building...
+CGO_ENABLED=0 gox -os="linux darwin windows" -arch="amd64" -ldflags "-s -w" -output "pkg/{{.OS}}_{{.Arch}}/terraform-provider-netbox_v0.0.1" .
+Number of parallel builds: 15
+
+-->   windows/amd64: github.com/fenglyu/terraform-provider-netbox
+-->     linux/amd64: github.com/fenglyu/terraform-provider-netbox
+-->    darwin/amd64: github.com/fenglyu/terraform-provider-netbox
+
+ % tree pkg
+pkg
+├── darwin_amd64
+│   └── terraform-provider-netbox_v0.0.1
+├── linux_amd64
+│   └── terraform-provider-netbox_v0.0.1
+└── windows_amd64
+    └── terraform-provider-netbox_v0.0.1.exe
+
+3 directories, 3 files
+
+```
+
+
 ## Test
 ```shell script
 
