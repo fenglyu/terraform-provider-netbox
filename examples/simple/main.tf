@@ -9,12 +9,11 @@ resource "netbox_available_prefixes" "gke-pods" {
   is_pool          = false
   status           = "active"
 
-  ##vrf = 0
   tenant           = "cloud"
-  role             = "Development"
-  site             = "gcp" 
-  description = "test/cloud/flv-test-0 || usw2-pri-gke-nodes"
-  tags        = ["k8s", "gke", "gke-pods", "test01", "test02"]
+  role             = "bar"
+  site             = "foo" 
+  description = "foo"
+  tags        = ["test01", "test02"]
 
   custom_fields    = {
       helpers      = ""
