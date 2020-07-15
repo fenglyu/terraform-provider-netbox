@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go v1.32.5 // indirect
 	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0 // indirect
 	github.com/fatih/color v1.9.0 // indirect
-	github.com/fenglyu/go-netbox v0.0.0-20200714130411-2bb01b589586
+	github.com/fenglyu/go-netbox v0.0.0-20200715111839-07b514ccc2a6
 	github.com/go-openapi/runtime v0.19.19
 	github.com/go-openapi/strfmt v0.19.5
 	github.com/google/go-cmp v0.5.0 // indirect

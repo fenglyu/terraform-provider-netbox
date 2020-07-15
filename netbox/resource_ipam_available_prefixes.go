@@ -219,7 +219,7 @@ func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) 
 	var IsPool bool
 	if isPoolData, ok := d.GetOk("is_pool"); ok {
 		IsPool = isPoolData.(bool)
-		wPrefix.IsPool = IsPool
+		wPrefix.IsPool = &IsPool
 	}
 
 	var description string
@@ -380,8 +380,8 @@ func resourceIpamAvailablePrefixesUpdate(d *schema.ResourceData, m interface{}) 
 	}
 
 	if d.HasChange("is_pool") && !d.IsNewResource() {
-		v := d.Get("is_pool")
-		writablePrefix.IsPool = v.(bool)
+		v := d.Get("is_pool").(bool)
+		writablePrefix.IsPool = &v
 	}
 
 	if d.HasChange("description") && !d.IsNewResource() {
@@ -426,10 +426,11 @@ func resourceIpamAvailablePrefixesUpdate(d *schema.ResourceData, m interface{}) 
 		return err
 	}
 	partialUpdatePrefix := ipam.IpamPrefixesPartialUpdateParams{
-		ID:   int64(id),
-		Data: &writablePrefix,
+		ID:      int64(id),
+		Data:    &writablePrefix,
+		Context: context.Background(),
 	}
-	partialUpdatePrefix.WithContext(context.Background())
+
 	partialUpdatePrefixRes, _ := json.Marshal(partialUpdatePrefix)
 	log.Println("resourceIpamAvailablePrefixesUpdate partialUpdatePrefix: ", string(partialUpdatePrefixRes))
 
