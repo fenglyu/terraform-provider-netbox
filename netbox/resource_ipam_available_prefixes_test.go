@@ -88,7 +88,7 @@ resource "netbox_available_prefixes" "foo" {
   	role = "gcp"
   	site = "se1"
   	vlan = "gcp"
-  	vrf  = "activision"
+  	#vrf  = "activision"
   	tenant = "cloud"
 	tags = ["AvailablePrefix-acc%{random_suffix}-03", "AvailablePrefix-acc%{random_suffix}-04", "AvailablePrefix-acc%{random_suffix}-05"]
 }`, context)

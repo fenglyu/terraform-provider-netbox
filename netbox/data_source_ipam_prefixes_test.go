@@ -104,7 +104,7 @@ resource "netbox_available_prefixes" "foo" {
   role = "gcp"
   site = "se1"
   vlan = "gcp"
-  vrf  = "activision"
+  #vrf  = "activision"
   tenant = "cloud"
 
   description = "testAccDataSourceComputeInstanceConfig description"
@@ -127,7 +127,7 @@ resource "netbox_available_prefixes" "foo" {
   role = "gcp"
   site = "se1"
   vlan = "gcp"
-  vrf  = "activision"
+  #vrf  = "activision"
   tenant = "cloud"
 
   description = "testAccDataSourceComputeInstanceConfig description"
