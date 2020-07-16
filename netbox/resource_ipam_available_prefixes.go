@@ -236,7 +236,7 @@ func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) 
 
 	var customFields interface{}
 	if cfData, ok := d.GetOk("custom_fields"); ok {
-		customFields = cfData.(map[string]string)
+		customFields = cfData.(map[string]interface{})
 		wPrefix.CustomFields = customFields
 	}
 

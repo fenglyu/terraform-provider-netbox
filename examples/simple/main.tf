@@ -4,22 +4,20 @@ provider "netbox" {
 
 resource "netbox_available_prefixes" "gke-pods" {
   #parent_prefix = "10.0.4.0/24"
-  parent_prefix_id = 9480
+  parent_prefix_id = 302
   prefix_length    = 29
   is_pool          = false
   status           = "active"
 
-  tenant           = "cloud"
-  role             = "bar"
-  site             = "foo" 
+
   description = "foo"
   tags        = ["test01", "test02"]
 
-  custom_fields    = {
-      helpers      = ""
-      ipv4_acl_in  = ""
-      ipv4_acl_out = ""
-  }
+#  custom_fields    = {
+#      helpers      = ""
+#      ipv4_acl_in  = ""
+#      ipv4_acl_out = ""
+#  }
 
 }
 
