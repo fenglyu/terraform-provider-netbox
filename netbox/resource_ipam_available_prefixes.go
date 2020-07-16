@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/fenglyu/go-netbox/netbox/client/dcim"
-	"github.com/fenglyu/go-netbox/netbox/client/tenancy"
 	"log"
 	"strconv"
 	"strings"
@@ -14,7 +12,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 
+	"github.com/fenglyu/go-netbox/netbox/client/dcim"
 	"github.com/fenglyu/go-netbox/netbox/client/ipam"
+	"github.com/fenglyu/go-netbox/netbox/client/tenancy"
 	"github.com/fenglyu/go-netbox/netbox/models"
 )
 

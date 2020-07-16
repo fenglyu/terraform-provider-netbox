@@ -3,14 +3,15 @@ package netbox
 import (
 	"context"
 	"fmt"
-	"github.com/fenglyu/go-netbox/netbox/client/ipam"
-	"github.com/fenglyu/go-netbox/netbox/models"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+
+	"github.com/fenglyu/go-netbox/netbox/client/ipam"
+	"github.com/fenglyu/go-netbox/netbox/models"
 )
 
 func TestAccAvaliablePrefixes_basic(t *testing.T) {
