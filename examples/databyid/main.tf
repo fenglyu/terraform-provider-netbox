@@ -12,7 +12,7 @@ resource "netbox_available_prefixes" "gke-pods" {
   is_pool          = true
   status           = "active"
 
-  tenant = 1
+  tenant = "foo"
   description = "cidr for gke-pods, Hello, My friend"
   tags        = ["test01", "test02", "test03", "test04"]
 }
