@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
 	"log"
 	"strconv"
 	"strings"
@@ -128,11 +129,34 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 				ValidateFunc: validation.StringLenBetween(0, 200),
 				Description:  "Describe the purpose of this prefix",
 			},
+			// Blizzard's custom_fields
 			"custom_fields": {
-				Type:        schema.TypeList,
+				Type:        schema.TypeMap,
 				Optional:    true,
-				Description: "A set of key/value pairs assigned to the custom_fields.",
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				ConfigMode:  schema.SchemaConfigModeAttr,
+				Description: "Set of customized key/value pairs created for prefix.",
+				//Elem:        &schema.Schema{Type: schema.TypeString},
+				/*				*/
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"helpers": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "helpers (to be explained)",
+						},
+						"ipv4_acl_in": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "ipv4_acl_in (to be explained)",
+						},
+						"ipv4_acl_out": {
+							Type: schema.TypeString,
+							//DiffSuppressFunc: emptyOrDefaultStringSuppress(""),
+							Optional:    true,
+							Description: "ipv4_acl_out (to be explained)",
+						},
+					},
+				},
 			},
 			"created": {
 				Type:        schema.TypeString,
@@ -150,7 +174,15 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 				Description: "Last updated timestamp",
 			},
 		},
-		//	CustomizeDiff: nil,
+
+		CustomizeDiff: customdiff.All(
+			customdiff.If(
+				func(d *schema.ResourceDiff, meta interface{}) bool {
+					return d.HasChange("custom_fields")
+				},
+				suppressEmptyCustomFieldsDiff,
+			),
+		),
 	}
 }
 
@@ -272,8 +304,9 @@ func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) 
 	}
 	availablePrefix := res.GetPayload()
 
-	//  Duo the bug in API `ipam/prefixes/{ID}/available-prefixes/` which can't setup the right vrf
-	//  Here we update its vrf as a fixup
+	//  Due to the bug in API `ipam/prefixes/{ID}/available-prefixes/` which can't setup the right vrf
+	//  Here we update its vrf as a fix, The following section can be removed once the bug is fixed in
+	//  future releases.
 	if vrf != nil {
 		vrfP := models.WritablePrefix{
 			Vrf:    &vrf.ID,
@@ -552,7 +585,7 @@ func getIpamRoles(config *Config, d *schema.ResourceData) ([]*models.Role, error
 		fmt.Println("IpamRolesList ", err)
 	}
 
-	if roleRes == nil || roleRes.Payload != nil || *roleRes.Payload.Count < 1 {
+	if roleRes == nil || roleRes.Payload == nil || *roleRes.Payload.Count < 1 {
 		return nil, fmt.Errorf("Unknow role %s , not found", roleName)
 	}
 	// trace level log
@@ -577,7 +610,7 @@ func getDcimSites(config *Config, d *schema.ResourceData) ([]*models.Site, error
 		return nil, fmt.Errorf("DcimSitesListParams %s", err.Error())
 	}
 
-	if siteRes == nil || *siteRes.Payload.Count < 1 {
+	if siteRes == nil || siteRes.Payload == nil || *siteRes.Payload.Count < 1 {
 		return nil, fmt.Errorf("Unknow Site %s , not found", siteName)
 	}
 	return siteRes.Payload.Results, nil
@@ -597,7 +630,7 @@ func getIpamVlans(config *Config, d *schema.ResourceData) ([]*models.VLAN, error
 	if err != nil {
 		return nil, fmt.Errorf("IpamVlansList %s", err.Error())
 	}
-	if vlanData == nil || *vlanData.Payload.Count < 1 {
+	if vlanData == nil || vlanData.Payload == nil || *vlanData.Payload.Count < 1 {
 		return nil, fmt.Errorf("Unknow vlan %s , not found", vlanName)
 	}
 	return vlanData.Payload.Results, nil
@@ -618,7 +651,7 @@ func getIpamVrfs(config *Config, d *schema.ResourceData) ([]*models.VRF, error) 
 	if err != nil {
 		return nil, fmt.Errorf("IpamVlansList %s", err.Error())
 	}
-	if vrfData == nil || *vrfData.Payload.Count < 1 {
+	if vrfData == nil || vrfData.Payload == nil || *vrfData.Payload.Count < 1 {
 		return nil, fmt.Errorf("Unknow vrf %s , not found", vrfName)
 	}
 	return vrfData.Payload.Results, nil
@@ -639,7 +672,7 @@ func getTenancyTenant(config *Config, d *schema.ResourceData) ([]*models.Tenant,
 		return nil, fmt.Errorf("TenancyTenantsList %s", err.Error())
 	}
 
-	if tenantData == nil || *tenantData.Payload.Count < 1 {
+	if tenantData == nil || tenantData.Payload == nil || *tenantData.Payload.Count < 1 {
 		return nil, fmt.Errorf("Unknow Tenant %s , not found", tenantName)
 	}
 	return tenantData.Payload.Results, nil

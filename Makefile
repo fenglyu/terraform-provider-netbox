@@ -8,6 +8,7 @@ GIT_COMMIT=$$(git rev-parse HEAD)
 RELEASE_VERSION=$$(git describe --abbrev=0 --tags)
 version ?= v0.1.0
 LD_FLAGS=-s -w
+#TESTARGS=-v
 
 
 default: build

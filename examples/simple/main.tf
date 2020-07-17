@@ -4,7 +4,7 @@ provider "netbox" {
 
 resource "netbox_available_prefixes" "gke-pods" {
   #parent_prefix = "10.0.4.0/24"
-  parent_prefix_id = 302
+  parent_prefix_id = 371
   prefix_length    = 29
   is_pool          = false
   status           = "active"

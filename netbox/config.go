@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/fenglyu/go-netbox/netbox/client"
@@ -58,11 +59,6 @@ type Config struct {
 }
 
 func (c *Config) LoadAndValidate(ctx context.Context) error {
-
-	if c.BasePath == "" {
-		c.BasePath = NetboxDefaultBasePath
-	}
-
 	if c.BasePath == "" {
 		c.BasePath = NetboxDefaultBasePath
 	}
@@ -83,22 +79,21 @@ func (c *Config) LoadAndValidate(ctx context.Context) error {
 	}
 
 	schemes := []string{"https", "http"}
+	if err := ApiAccessTest(c.Host, c.BasePath, c.ApiToken, schemes, InsecureSkipVerify); err != nil {
+		return err
+	}
 	httpClient, err := runtimeclient.TLSClient(runtimeclient.TLSClientOptions{InsecureSkipVerify: InsecureSkipVerify})
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	t := runtimeclient.NewWithClient(c.Host, c.BasePath, schemes, httpClient)
+
 	log.Printf("[INFO] Instantiating http client for host %s and path %s", c.Host, c.BasePath)
 	if c.ApiToken != "" {
 		t.DefaultAuthentication = runtimeclient.APIKeyAuth(AuthHeaderName, "header", fmt.Sprintf(AuthHeaderFormat, c.ApiToken))
 	}
 	//t.SetDebug(true)
 	c.client = client.New(t, strfmt.Default)
-
-	if err := ApiAccessTest(c.Host, c.BasePath, c.ApiToken, schemes, InsecureSkipVerify); err != nil {
-		return err
-	}
 
 	return nil
 }
@@ -124,28 +119,29 @@ func selectScheme(schemes []string) string {
 
 func ApiAccessTest(host, path, token string, schemes []string, InsecureSkipVerify bool) error {
 	//Test url example: "http://netbox.k8s.me/api/"
-
-	url := fmt.Sprintf("%s://%s%s", selectScheme(schemes), host, path)
+	schema := selectScheme(schemes)
+	url := fmt.Sprintf("%s://%s%s", schema, host, path)
 	method := "GET"
+	client := &http.Client{}
 
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: InsecureSkipVerify},
+	if schema != "" && strings.EqualFold(schema, "https") {
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: InsecureSkipVerify},
+		}
+		client = &http.Client{Transport: tr}
 	}
-	client := &http.Client{Transport: tr}
 	req, err := http.NewRequest(method, url, nil)
-
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("Token %s", token))
 
+	req.Header.Add("Authorization", fmt.Sprintf("Token %s", token))
 	res, err := client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer res.Body.Close()
-
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf(res.Status)
 	}
 	return nil

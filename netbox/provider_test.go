@@ -2,6 +2,7 @@ package netbox
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"strings"
@@ -37,10 +38,19 @@ func multiEnvSearch(ks []string) string {
 	return ""
 }
 
-/*
 func getTestNetboxApiTokenFromEnv(t *testing.T) string {
 	skipIfEnvNotSet(t, netboxApiTokenEnvVars...)
 	return multiEnvSearch(netboxApiTokenEnvVars)
+}
+
+func getTestNetboxHostFromEnv(t *testing.T) string {
+	skipIfEnvNotSet(t, netboxHostEnvVars...)
+	return multiEnvSearch(netboxHostEnvVars)
+}
+
+func getTestNetboxBasePathFromEnv(t *testing.T) string {
+	skipIfEnvNotSet(t, netboxBasePathEnvVars...)
+	return multiEnvSearch(netboxBasePathEnvVars)
 }
 
 func skipIfEnvNotSet(t *testing.T, envs ...string) {
@@ -56,7 +66,7 @@ func skipIfEnvNotSet(t *testing.T, envs ...string) {
 	}
 }
 
-
+/*
 func randInt(t *testing.T) int {
 	return rand.New(rand.NewSource(time.Now().UnixNano())).Int()
 }*/
