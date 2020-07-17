@@ -24,11 +24,11 @@ build-dev: fmtcheck generate
 	@[ -z "${version}" ] || ( echo "==> please use 'make build-dev version=vX.Y.Z'" )
 	go build  -ldflags="-X main.GitCommit=${GIT_COMMIT}" -o ~/.terraform.d/plugins/terraform-provider-$(PKG_NAME)_${version} .
 
-build: fmtcheck generate prep gox $(eval SHELL:=/bin/bash)
+build: fmtcheck generate prep gox
 	@echo "==> Building..."
 	@CGO_ENABLED=0 gox -os="$(XC_OS)" -arch="$(XC_ARCH)" -ldflags "$(LD_FLAGS)" -output "pkg/{{.OS}}_{{.Arch}}/terraform-provider-$(PKG_NAME)_${RELEASE_VERSION}" .
 
-release: build
+release: build $(eval SHELL:=/bin/bash)
 	@for PLATFORM in $$(find ./pkg -mindepth 1 -maxdepth 1 -type d); do \
 		OSARCH=$$(basename $$PLATFORM); \
 		echo "--> $$OSARCH"; \
@@ -36,6 +36,8 @@ release: build
 		zip ../$$OSARCH.zip ./*; \
 		popd >/dev/null 2>&1; \
 	done
+	@echo -ne "\n==> Results:\n"
+	@find pkg/ -type f -exec ls -sh '{}' \;
 	@## upload to platform, TBD
 
 test: fmtcheck generate

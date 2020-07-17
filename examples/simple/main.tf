@@ -9,15 +9,14 @@ resource "netbox_available_prefixes" "gke-pods" {
   is_pool          = false
   status           = "active"
 
-
   description = "foo"
   tags        = ["test01", "test02"]
 
-#  custom_fields    = {
-#      helpers      = ""
-#      ipv4_acl_in  = ""
-#      ipv4_acl_out = ""
-#  }
+  custom_fields    = {
+      helpers      = ""
+      ipv4_acl_in  = ""
+      ipv4_acl_out = ""
+  }
 
 }
 

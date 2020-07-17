@@ -129,9 +129,9 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 				Description:  "Describe the purpose of this prefix",
 			},
 			"custom_fields": {
-				Type:        schema.TypeMap,
+				Type:        schema.TypeList,
 				Optional:    true,
-				Description: "Custom fields",
+				Description: "A set of key/value pairs assigned to the custom_fields.",
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"created": {
@@ -325,9 +325,12 @@ func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) er
 	}
 
 	d.Set("prefix", prefix.Prefix)
-	pl := strings.Split(*prefix.Prefix, "/")[1]
-	prefixLength, _ := strconv.Atoi(pl)
-	d.Set("prefix_length", prefixLength)
+	if prefix.Prefix != nil && *prefix.Prefix != "" {
+		pl := strings.Split(*prefix.Prefix, "/")[1]
+		prefixLength, _ := strconv.Atoi(pl)
+		d.Set("prefix_length", prefixLength)
+	}
+
 	if prefix != nil && prefix.Site != nil {
 		d.Set("site", prefix.Site.Name)
 	} else {
@@ -392,7 +395,7 @@ func resourceIpamAvailablePrefixesUpdate(d *schema.ResourceData, m interface{}) 
 		writablePrefix.Tags = convertStringSet(d.Get("tags").(*schema.Set))
 	}
 	if d.HasChange("custom_fields") && !d.IsNewResource() {
-		cfData := d.Get("custom_fields").(map[string]string)
+		cfData := d.Get("custom_fields").(map[string]interface{})
 		writablePrefix.CustomFields = cfData
 	}
 	if d.HasChange("site") && !d.IsNewResource() {
@@ -509,11 +512,13 @@ func getIpamPrefixes(config *Config, d *schema.ResourceData) ([]*models.Prefix, 
 	if err != nil {
 		return nil, err
 	}
-	ipamPrefixesReadOKRes, _ := json.Marshal(&ipamPrefixListBody.Payload.Results)
-	log.Println("ipamPrefixListBody", string(ipamPrefixesReadOKRes))
-	if ipamPrefixListBody == nil || *ipamPrefixListBody.Payload.Count < 1 {
+
+	if ipamPrefixListBody == nil || ipamPrefixListBody.Payload == nil || *ipamPrefixListBody.Payload.Count < 1 {
 		return nil, fmt.Errorf("Unknow prefix %s with ID %s, not found", prefix, d.Id())
 	}
+	// trace level log
+	ipamPrefixesReadOKRes, _ := json.Marshal(&ipamPrefixListBody.Payload.Results)
+	log.Println("[getIpamPrefixes] ipamPrefixListBody", string(ipamPrefixesReadOKRes))
 
 	return ipamPrefixListBody.Payload.Results, nil
 }
@@ -547,12 +552,13 @@ func getIpamRoles(config *Config, d *schema.ResourceData) ([]*models.Role, error
 		fmt.Println("IpamRolesList ", err)
 	}
 
+	if roleRes == nil || roleRes.Payload != nil || *roleRes.Payload.Count < 1 {
+		return nil, fmt.Errorf("Unknow role %s , not found", roleName)
+	}
+	// trace level log
 	roleReadOKRes, _ := json.Marshal(&roleRes.Payload.Results)
 	log.Println("roleReadOKRes ", string(roleReadOKRes))
 
-	if roleRes == nil || *roleRes.Payload.Count < 1 {
-		return nil, fmt.Errorf("Unknow role %s , not found", roleName)
-	}
 	return roleRes.Payload.Results, nil
 }
 

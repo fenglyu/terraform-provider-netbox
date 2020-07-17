@@ -108,7 +108,7 @@ func flatternNestedVRF(nv *models.NestedVRF) []map[string]interface{} {
 		"rd":           nv.Rd,
 	}}
 }
-*/
+
 
 func flattenCustomFields(p *models.Prefix) map[string]string {
 	cf := p.CustomFields.(map[string]interface{})
@@ -118,7 +118,7 @@ func flattenCustomFields(p *models.Prefix) map[string]string {
 	}
 	return cfMap
 }
-
+*/
 func convertStringSet(set *schema.Set) []string {
 	s := make([]string, 0, set.Len())
 	for _, v := range set.List() {

@@ -69,13 +69,16 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 		if err != nil {
 			return err
 		}
-		ipamPrefixesReadOKRes, _ := json.Marshal(&ipamPrefixListBody.Payload.Results)
-		log.Println("ipamPrefixListBody", string(ipamPrefixesReadOKRes))
-		if ipamPrefixListBody == nil || *ipamPrefixListBody.Payload.Count < 1 {
+
+		if ipamPrefixListBody == nil || ipamPrefixListBody.Payload == nil || *ipamPrefixListBody.Payload.Count < 1 {
 			//return fmt.Errorf("Unknow prefix %s not found", *prefix.Prefix)
-			return fmt.Errorf("Unknow prefix %s not found", v)
 			d.SetId("")
+			return fmt.Errorf("Unknow prefix %s not found", v)
 		}
+		// trace level output
+		ipamPrefixesReadOKRes, _ := json.Marshal(&ipamPrefixListBody.Payload.Results)
+		log.Println("[dataSourceIpamAvailablePrefixesRead] ipamPrefixListBody", string(ipamPrefixesReadOKRes))
+
 		prefix = ipamPrefixListBody.Payload.Results[0]
 	}
 
@@ -97,9 +100,11 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 	}
 
 	d.Set("prefix", prefix.Prefix)
-	pl := strings.Split(*prefix.Prefix, "/")[1]
-	prefixLength, _ := strconv.Atoi(pl)
-	d.Set("prefix_length", prefixLength)
+	if prefix.Prefix != nil && *prefix.Prefix != "" {
+		pl := strings.Split(*prefix.Prefix, "/")[1]
+		prefixLength, _ := strconv.Atoi(pl)
+		d.Set("prefix_length", prefixLength)
+	}
 	if prefix != nil && prefix.Site != nil {
 		d.Set("site", prefix.Site.Name)
 	}
