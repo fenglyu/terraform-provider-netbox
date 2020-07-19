@@ -16,27 +16,24 @@ func suppressEmptyCustomFieldsDiff(d *schema.ResourceDiff, meta interface{}) err
 
 	old, ok := oldi.([]interface{})
 	if !ok {
-		return fmt.Errorf("Expected old guest accelerator diff to be a slice")
+		return fmt.Errorf("Expected old Custom Fields diff to be a slice")
 	}
 
 	new, ok := newi.([]interface{})
 	if !ok {
-		return fmt.Errorf("Expected new guest accelerator diff to be a slice")
+		return fmt.Errorf("Expected new Custom Fields diff to be a slice")
 	}
 
 	if len(old) != 0 && len(new) != 1 {
 		return nil
 	}
 
-	firstAccel, ok := new[0].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("Unable to type assert guest accelerator")
+	if len(old) != 1 && len(new) != 0 {
+		return nil
 	}
 
-	if firstAccel["count"].(int) == 0 {
-		if err := d.Clear("guest_accelerator"); err != nil {
-			return err
-		}
+	if _, ok := new[0].(map[string]interface{}); !ok {
+		return fmt.Errorf("Unable to type assert Custom Fields")
 	}
 
 	return nil

@@ -11,7 +11,7 @@ import (
 func TestAccDataSourceAvailablePrefixes_basic(t *testing.T) {
 
 	context := map[string]interface{}{
-		"parent_prefix_id":     302,
+		"parent_prefix_id":     502,
 		"random_prefix_length": randIntRange(t, 16, 30),
 	}
 

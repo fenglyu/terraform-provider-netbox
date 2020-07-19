@@ -2,6 +2,7 @@ package netbox
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -118,6 +119,14 @@ func flattenCustomFields(p *models.Prefix) map[string]string {
 	}
 	return cfMap
 }
+
+
+type CustomFields struct {
+	Helpers      string `json:"helpers"`
+	Ipv4_acl_in  string `json:"ipv4_acl_in"`
+	Ipv4_acl_out string `json:"ipv4_acl_out"`
+}
+
 */
 func convertStringSet(set *schema.Set) []string {
 	s := make([]string, 0, set.Len())
@@ -127,4 +136,46 @@ func convertStringSet(set *schema.Set) []string {
 	sort.Strings(s)
 
 	return s
+}
+
+func expandCustomFields(v interface{}) (map[string]interface{}, error) {
+	if v == nil {
+		// We can't set default values for lists.
+		return nil, nil
+	}
+
+	ls := v.([]interface{})
+	cf := make(map[string]interface{}, len(ls))
+
+	if len(ls) == 0 {
+		// We can't set default values for lists
+		return cf, nil
+	}
+
+	if len(ls) > 1 || ls[0] == nil {
+		return nil, fmt.Errorf("expected exactly one custom field")
+	}
+
+	original := ls[0].(map[string]interface{})
+	if v, ok := original["helpers"]; ok {
+		cf["helpers"] = v.(string)
+	}
+
+	if v, ok := original["ipv4_acl_in"]; ok {
+		cf["ipv4_acl_in"] = v.(string)
+	}
+
+	if v, ok := original["ipv4_acl_out"]; ok {
+		cf["ipv4_acl_out"] = v.(string)
+	}
+	return cf, nil
+}
+
+func flatterCustomFields(v interface{}) []map[string]interface{} {
+	cf := make([]map[string]interface{}, 0)
+	if v == nil {
+		return nil
+	}
+	cf = append(cf, v.(map[string]interface{}))
+	return cf
 }

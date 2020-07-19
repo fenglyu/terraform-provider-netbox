@@ -80,7 +80,7 @@ The following arguments are supported:
 
 In addition to the arguments listed above, the following computed attributes are
 exported:
-* `id`      - An identifier for the resource in integer form
+* `id`      - An identifier for the resource in string form
 * `prefix`  - The available prefix in CIDR notation which is computed
 * `family`  - The Ipv4/Ipv6 family
 * `created` - The day when the prefix is create

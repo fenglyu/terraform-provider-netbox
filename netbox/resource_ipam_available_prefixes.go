@@ -131,10 +131,12 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 			},
 			// Blizzard's custom_fields
 			"custom_fields": {
-				Type:        schema.TypeMap,
+				Type:        schema.TypeList,
 				Optional:    true,
 				ConfigMode:  schema.SchemaConfigModeAttr,
+				MaxItems:    1,
 				Description: "Set of customized key/value pairs created for prefix.",
+				//DiffSuppressFunc: emptyOrDefaultStringSuppress(""),
 				//Elem:        &schema.Schema{Type: schema.TypeString},
 				/*				*/
 				Elem: &schema.Resource{
@@ -143,17 +145,22 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Description: "helpers (to be explained)",
+							Default:     "",
+							//DiffSuppressFunc: emptyOrDefaultStringSuppress(""),
 						},
 						"ipv4_acl_in": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							Description: "ipv4_acl_in (to be explained)",
+							Default:     "",
+							//DiffSuppressFunc: emptyOrDefaultStringSuppress(""),
 						},
 						"ipv4_acl_out": {
-							Type: schema.TypeString,
-							//DiffSuppressFunc: emptyOrDefaultStringSuppress(""),
+							Type:        schema.TypeString,
 							Optional:    true,
 							Description: "ipv4_acl_out (to be explained)",
+							Default:     "",
+							//DiffSuppressFunc: emptyOrDefaultStringSuppress(""),
 						},
 					},
 				},
@@ -174,7 +181,6 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 				Description: "Last updated timestamp",
 			},
 		},
-
 		CustomizeDiff: customdiff.All(
 			customdiff.If(
 				func(d *schema.ResourceDiff, meta interface{}) bool {
@@ -267,9 +273,14 @@ func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) 
 	}
 
 	var customFields interface{}
+
 	if cfData, ok := d.GetOk("custom_fields"); ok {
-		customFields = cfData.(map[string]interface{})
-		wPrefix.CustomFields = customFields
+		if cfMap, err := expandCustomFields(cfData); err == nil {
+			customFields = cfMap
+			wPrefix.CustomFields = customFields
+		} else {
+			log.Println(err)
+		}
 	}
 
 	// If parent prefix is given
@@ -343,7 +354,9 @@ func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) er
 	log.Println("[INFO] resourceIpamPrefixesRead ", prefix)
 	//d.Set("id", prefix.ID)
 	d.Set("description", prefix.Description)
-	d.Set("custom_fields", prefix.CustomFields)
+
+	log.Println(flatterCustomFields(prefix.CustomFields))
+	d.Set("custom_fields", flatterCustomFields(prefix.CustomFields))
 	d.Set("is_pool", prefix.IsPool)
 	d.Set("created", prefix.Created.String())
 	d.Set("family", prefix.Family)
@@ -428,8 +441,9 @@ func resourceIpamAvailablePrefixesUpdate(d *schema.ResourceData, m interface{}) 
 		writablePrefix.Tags = convertStringSet(d.Get("tags").(*schema.Set))
 	}
 	if d.HasChange("custom_fields") && !d.IsNewResource() {
-		cfData := d.Get("custom_fields").(map[string]interface{})
-		writablePrefix.CustomFields = cfData
+		cfData := d.Get("custom_fields").([]interface{})
+		cfMap, _ := expandCustomFields(cfData)
+		writablePrefix.CustomFields = cfMap
 	}
 	if d.HasChange("site") && !d.IsNewResource() {
 		if siteId, err := getModelId(config, d, "site"); err == nil {
