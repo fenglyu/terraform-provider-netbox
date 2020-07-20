@@ -26,11 +26,12 @@ resource "netbox_available_prefixes" "default" {
   role             = "bar"
   site             = "foo" 
 
-  custom_fields    = {
+  custom_fields  {
       helpers      = ""
       ipv4_acl_in  = ""
       ipv4_acl_out = ""
   }
+}
 ```
 
 ```hcl
@@ -46,6 +47,8 @@ resource "netbox_available_prefixes" "default" {
   site             = "foo" 
   description = "foo bar"
   tags        = ["foo", "bar"]
+
+  custom_fields  {}
 }
 ```
 
@@ -71,17 +74,26 @@ The following arguments are supported:
 * `site`                - (Optional) The site the prefix is assigned to.
 * `tags`                - (Optional) A list of network tags to attach to the instance.
 * `tenant`              - (Optional) A tenant represents a discrete entity for administrative purposes.
-* `vlan`                - (Optional) A isolated layber two domain this prefix is on/ or related to.
+* `vlan`                - (Optional) A isolated layer two domain this prefix is on or related to.
 * `vrf`                 - (Optional) A VRF object in NetBox represents a virtual routing and forwarding (VRF) domain.
 * `description`         - (Optional) A brief description of this resource.
-* `custom_fields`       - (Optional) Custom fields can be left blank.
+* `custom_fields`       - (Required) Custom fields.
+
+---
+The `custom_fields` block supports:
+
+* `helpers` - (Optional) Blizzard Customized Field.
+
+* `ipv4_acl_in` - (Optional) Blizzard Customized Field.
+
+* `ipv4_acl_out` - (Optional) Blizzard Customized Field.
 
 ## Attributes Reference
 
 In addition to the arguments listed above, the following computed attributes are
 exported:
 * `id`      - An identifier for the resource in string form
-* `prefix`  - The available prefix in CIDR notation which is computed
+* `prefix`  - The available prefix in `CIDR` notation which is computed
 * `family`  - The Ipv4/Ipv6 family
 * `created` - The day when the prefix is create
 * `last_updated` -  The time when the prefix is last updated
@@ -91,6 +103,6 @@ exported:
 
 Prefix can be imported by its id, e.g.
 
-```hcl
+```bash
 $ terraform import netbox_available_prefixes.foo 911
 ```
