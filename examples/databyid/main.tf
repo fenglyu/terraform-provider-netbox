@@ -7,25 +7,23 @@ provider "netbox" {
 
 resource "netbox_available_prefixes" "gke-pods" {
   #parent_prefix = "10.0.4.0/24"
-  parent_prefix_id = 302
+  # bear in mind, if vrf is specified, the parent_prefix_id should belong to the vrf,
+  # otherwise, it wont' set the available prefix's vrf to "global"(by default).
+  parent_prefix_id = 627
   prefix_length    = 29
-  is_pool          = false
+  is_pool          = true
   status           = "active"
   role = "gcp"
   site = "se1"
   vlan = "gcp"
-  #vrf  = "activision"
+  vrf  = "activision"
   tenant = "cloud"
   description = "foo"
   tags        = ["test01", "test02"]
-  custom_fields    = {
-    helpers      = "helpers"
-    ipv4_acl_in  = "ipv4_acl_in"
-    ipv4_acl_out = "ipv4_acl_out"
-    number       = 123
-    required     = true
-    test_url     = "https://www.microsoft.com"
-    color        = "red"
+  custom_fields   {
+    helpers      = "atetste"
+    ipv4_acl_in  = "ipv4_a343434cl_in"
+    ipv4_acl_out = "ipv4_aefserwcl_out"
   }
 }
 
