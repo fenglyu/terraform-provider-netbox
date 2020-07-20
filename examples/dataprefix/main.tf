@@ -1,5 +1,5 @@
 provider "netbox" {
-  api_token = "434476c51e79b0badfad4afcd9a64b4dede1adb9"
+  api_token = "<authentication token>"
   host      = "netbox.k8s.me"
   base_path      = "/api"
   request_timeout = "4m"

@@ -69,48 +69,58 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 		if err != nil {
 			return err
 		}
-		ipamPrefixesReadOKRes, _ := json.Marshal(&ipamPrefixListBody.Payload.Results)
-		log.Println("ipamPrefixListBody", string(ipamPrefixesReadOKRes))
-		if ipamPrefixListBody == nil || *ipamPrefixListBody.Payload.Count < 1 {
+
+		if ipamPrefixListBody == nil || ipamPrefixListBody.Payload == nil || *ipamPrefixListBody.Payload.Count < 1 {
 			//return fmt.Errorf("Unknow prefix %s not found", *prefix.Prefix)
-			return fmt.Errorf("Unknow prefix %s not found", v)
 			d.SetId("")
+			return fmt.Errorf("Unknow prefix %s not found", v)
 		}
+		// trace level output
+		ipamPrefixesReadOKRes, _ := json.Marshal(&ipamPrefixListBody.Payload.Results)
+		log.Println("[dataSourceIpamAvailablePrefixesRead] ipamPrefixListBody", string(ipamPrefixesReadOKRes))
+
 		prefix = ipamPrefixListBody.Payload.Results[0]
 	}
 
 	jsonPrefix, _ := json.Marshal(prefix)
 	log.Println("[INFO] dataSourceIpamPrefixesRead ", string(jsonPrefix))
 	d.Set("description", prefix.Description)
-	d.Set("custom_fields", prefix.CustomFields)
+	//d.Set("custom_fields", prefix.CustomFields)
+	d.Set("custom_fields", flatternDatasourceCF(d, prefix.CustomFields))
 	d.Set("is_pool", prefix.IsPool)
 	d.Set("created", prefix.Created.String())
 	d.Set("family", prefix.Family)
 	d.Set("last_updated", prefix.LastUpdated.String())
 
 	if prefix != nil && prefix.Role != nil {
-		d.Set("role", prefix.Role.ID)
+		d.Set("role", prefix.Role.Name)
+	}
+
+	if ppid, ok := d.GetOk("parent_prefix_id"); ok {
+		d.Set("parent_prefix_id", ppid.(int))
 	}
 
 	d.Set("prefix", prefix.Prefix)
-	pl := strings.Split(*prefix.Prefix, "/")[1]
-	prefixLength, _ := strconv.Atoi(pl)
-	d.Set("prefix_length", prefixLength)
+	if prefix.Prefix != nil && *prefix.Prefix != "" {
+		pl := strings.Split(*prefix.Prefix, "/")[1]
+		prefixLength, _ := strconv.Atoi(pl)
+		d.Set("prefix_length", prefixLength)
+	}
 	if prefix != nil && prefix.Site != nil {
-		d.Set("site", prefix.Site.ID)
+		d.Set("site", prefix.Site.Name)
 	}
 	if prefix != nil && prefix.Status != nil {
 		d.Set("status", prefixStatusIDMapReverse[*prefix.Status.Value])
 	}
 	d.Set("tags", prefix.Tags)
 	if prefix != nil && prefix.Tenant != nil {
-		d.Set("tenant", prefix.Tenant.ID)
+		d.Set("tenant", prefix.Tenant.Name)
 	}
 	if prefix != nil && prefix.Vlan != nil {
-		d.Set("vlan", prefix.Vlan.ID)
+		d.Set("vlan", prefix.Vlan.Name)
 	}
 	if prefix != nil && prefix.Vrf != nil {
-		d.Set("vrf", prefix.Vrf.ID)
+		d.Set("vrf", prefix.Vrf.Name)
 	}
 
 	d.SetId(fmt.Sprintf("%d", prefix.ID))

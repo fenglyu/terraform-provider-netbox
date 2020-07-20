@@ -30,9 +30,10 @@ provider "netbox" {
 * Or existing field is working in an unexpected way
 * You'd like the provider to support a new resource or field
 
-Use one of following method to reach us,
-1. Create a ghosthup repo issues
-2. Leave #cloud foundation team a message in slack channel `gcp-alpha`
-3. Email/Slack to maintainer *flv_blizzard.com* directly
+-> Use one of following method to reach us,
+
++ Email/Slack to maintainer *flv@blizzard.com* directly
++ Create a ghosthup repo issues
++ Leave #cloud foundation team a message in slack channel `gcp-alpha`
 
 

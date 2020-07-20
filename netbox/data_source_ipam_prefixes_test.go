@@ -11,14 +11,17 @@ import (
 func TestAccDataSourceAvailablePrefixes_basic(t *testing.T) {
 
 	context := map[string]interface{}{
-		"parent_prefix_id":     125,
+		// vrf global
+		//"parent_prefix_id":     502,
+		// vrf "activison", choose the right parent_prefix_id if you enabled vrf
+		"parent_prefix_id":     627,
 		"random_prefix_length": randIntRange(t, 16, 30),
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
+		CheckDestroy: testAccCheckDataSourceAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceAvailablePrefixesConfigByPrefix(context),
@@ -101,9 +104,15 @@ resource "netbox_available_prefixes" "foo" {
   prefix_length 	= %{random_prefix_length}
   is_pool          	= true
   status          	= "active"
+  role = "gcp"
+  site = "se1"
+  vlan = "gcp"
+  vrf  = "activision"
+  tenant = "cloud"
 
+  custom_fields  {}
   description = "testAccDataSourceComputeInstanceConfig description"
-  tags        = ["datasource-AvailablePrefix-acc01", "datasource-AvailablePrefix-acc02", "datasource-AvailablePrefix-acc02"]
+  tags        = ["datasource-AvailablePrefix-acc01", "datasource-AvailablePrefix-acc02", "datasource-AvailablePrefix-acc03"]
 }
 
 data "netbox_available_prefixes" "bar"{
@@ -119,13 +128,40 @@ resource "netbox_available_prefixes" "foo" {
   prefix_length 	= %{random_prefix_length}
   is_pool          	= true
   status          	= "active"
+  role = "gcp"
+  site = "se1"
+  vlan = "gcp"
+  vrf  = "activision"
+  tenant = "cloud"
 
   description = "testAccDataSourceComputeInstanceConfig description"
-  tags        = ["datasource-AvailablePrefix-acc03", "datasource-AvailablePrefix-acc04", "datasource-AvailablePrefix-acc05"]
+  tags        = ["datasource-AvailablePrefix-acc06", "datasource-AvailablePrefix-acc04", "datasource-AvailablePrefix-acc05"]
+  custom_fields  {}
+
+
 }
 
 data "netbox_available_prefixes" "bar"{
   prefix_id = netbox_available_prefixes.foo.id
 }
 `, config)
+}
+
+func testAccCheckDataSourceAvailablePrefixesDestroyProducer(t *testing.T) func(s *terraform.State) error {
+	return func(s *terraform.State) error {
+		for _, rs := range s.RootModule().Resources {
+			if rs.Type != "netbox_available_prefixes" {
+				continue
+			}
+
+			config := testAccProvider.Meta().(*Config)
+			_, err := sendRequestforPrefix(config, rs)
+			fmt.Println("testAccCheckAvailablePrefixesDestroyProducer: ", err)
+
+			if err == nil {
+				return fmt.Errorf("Available Prefix still exists")
+			}
+		}
+		return nil
+	}
 }

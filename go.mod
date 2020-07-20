@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go v1.32.5 // indirect
 	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0 // indirect
 	github.com/fatih/color v1.9.0 // indirect
-	github.com/fenglyu/go-netbox v0.0.0-20200709133737-24f1dc91c640
+	github.com/fenglyu/go-netbox v0.0.0-20200715111839-07b514ccc2a6
 	github.com/go-openapi/runtime v0.19.19
 	github.com/go-openapi/strfmt v0.19.5
 	github.com/google/go-cmp v0.5.0 // indirect
@@ -25,6 +25,7 @@ require (
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mitchellh/cli v1.1.1 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
+	github.com/mitchellh/gox v1.0.1 // indirect
 	github.com/posener/complete v1.2.3 // indirect
 	github.com/spf13/afero v1.3.0 // indirect
 	github.com/terraform-providers/terraform-provider-random v0.0.0-20190925211435-95c131714b03

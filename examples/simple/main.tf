@@ -1,25 +1,24 @@
 provider "netbox" {
-  api_token = "434476c51e79b0badfad4afcd9a64b4dede1adb9"
-  host      = "netbox.k8s.me"
-  base_path = "/api"
-
-  // Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
-  // see time.ParseDuration for time unit
   request_timeout = "4m"
 }
 
-resource "netbox_available_prefixes" "gke-pods" {
-  // example schema attribute
-  //parent_prefix = "10.0.4.0/24"
-  parent_prefix_id = 125
-  prefix_length    = 28
-  is_pool          = true
-  status           = "active"
 
-  #vrf = 0
-  tenant = 1
-  description = "cidr for gke-pods, Hello, My friend"
-  tags        = ["k8s", "gke", "gke-pods", "test01", "test02"]
+
+resource "netbox_available_prefixes" "gke-pods" {
+
+    parent_prefix_id = 502
+    prefix_length = 23
+    tags = ["BasePathTest-acc"]
+  /*
+    custom_fields   {
+      helpers      = "sdfdf"
+
+      ipv4_acl_in  = "ipv4_a343434cl_in"
+      ipv4_acl_out = "ipv4_aefserwcl_out"
+
+  }
+  */
+    custom_fields{}
 }
 
 output "available_prefix" {

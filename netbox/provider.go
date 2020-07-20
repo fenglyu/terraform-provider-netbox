@@ -1,9 +1,10 @@
 package netbox
 
 import (
+	"time"
+
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"time"
 )
 
 func Provider() terraform.ResourceProvider {

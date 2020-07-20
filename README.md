@@ -3,24 +3,39 @@
 
 ## Build netbox provider
 ```shell script
-make build-dev version=v0.0.1 
+make build-dev 
 ```
 
-## Run an simple example
+## Run an simple example 
 ```shell script
  % cd examples/simple
  % terraform init
 
 ```
 
-## Test
+## Build
+```
+% make build
+==> Checking source code against gofmt...
+==> Checking that code complies with gofmt requirements...
+go generate  ./...
+==> Installing gox...
+==> Building...
+Number of parallel builds: 15
+
+-->     linux/amd64: github.com/fenglyu/terraform-provider-netbox
+-->   windows/amd64: github.com/fenglyu/terraform-provider-netbox
+-->    darwin/amd64: github.com/fenglyu/terraform-provider-netbox
+
+```
+
+## Running provider acc test 
 ```shell script
 
 export NETBOX_TOKEN=""                                                                                                                                   ✘ 130 
 export NETBOX_HOST=""
 export NETBOX_BASE_PATH="/api"
 
-flv@genji ~/dev/go/terraform-plugins/terraform-provider-netbox
  % make testacc                                                                                                                                                                                       ✘ 2 
 ==> Checking source code against gofmt...
 ==> Checking that code complies with gofmt requirements...
@@ -45,6 +60,5 @@ testAccCheckAvailablePrefixesDestroyProducer:  There is not prefix with ID 186
 PASS
 ok      github.com/fenglyu/terraform-provider-netbox/netbox     1.055s
 ?       github.com/fenglyu/terraform-provider-netbox/version    [no test files]
-flv@genji ~/dev/go/terraform-plugins/terraform-provider-netbox
 
 ```
