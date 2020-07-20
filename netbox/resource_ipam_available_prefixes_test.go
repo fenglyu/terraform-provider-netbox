@@ -40,7 +40,6 @@ func TestAccAvaliablePrefixes_basic(t *testing.T) {
 	})
 }
 
-/*
 func TestAccAvaliablePrefixes_basic1(t *testing.T) {
 	context := map[string]interface{}{
 		"random_prefix_length": randIntRange(t, 16, 30),
@@ -83,7 +82,7 @@ func TestAccAvaliablePrefixes_basic2(t *testing.T) {
 				ResourceName:            "netbox_available_prefixes.bar",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"parent_prefix_id", "vrf"},
+				ImportStateVerifyIgnore: []string{"parent_prefix_id", "custom_fields"},
 			},
 		},
 	})
@@ -107,18 +106,16 @@ func TestAccAvaliablePrefixes_EmptyCustomFields(t *testing.T) {
 				ResourceName:            "netbox_available_prefixes.custom_fields",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"parent_prefix_id", "vrf"},
+				ImportStateVerifyIgnore: []string{"parent_prefix_id", "custom_fields"},
 			},
 		},
 	})
 }
 
-
-
 func testAccAvailablePrefixWithParentPrefixIdExample1(context map[string]interface{}) string {
 	return Nprintf(`
 resource "netbox_available_prefixes" "foo" {
-	parent_prefix_id = 502
+	parent_prefix_id = 627
 	prefix_length = %{random_prefix_length}
   	is_pool          = true
   	status           = "active"
@@ -126,16 +123,18 @@ resource "netbox_available_prefixes" "foo" {
   	role = "gcp"
   	site = "se1"
   	vlan = "gcp"
-  	#vrf  = "activision"
+  	vrf  = "activision"
   	tenant = "cloud"
 	tags = ["AvailablePrefix-acc%{random_suffix}-03", "AvailablePrefix-acc%{random_suffix}-04", "AvailablePrefix-acc%{random_suffix}-05"]
+
+  	custom_fields  {}
 }`, context)
 }
 
 func testAccAvailablePrefixWithParentPrefixIdExample2(context map[string]interface{}) string {
 	return Nprintf(`
 resource "netbox_available_prefixes" "bar" {
-	parent_prefix_id = 502
+	parent_prefix_id = 627
 	prefix_length = %{random_prefix_length}
   	is_pool          = true
   	status           = "active"
@@ -143,7 +142,7 @@ resource "netbox_available_prefixes" "bar" {
   	role = "gcp"
   	site = "se1"
   	vlan = "gcp"
-  	#vrf  = "activision"
+  	vrf  = "activision"
   	tenant = "cloud"
 	tags = ["AvailablePrefix-acc%{random_suffix}-03", "AvailablePrefix-acc%{random_suffix}-04", "AvailablePrefix-acc%{random_suffix}-05"]
 
@@ -158,7 +157,7 @@ resource "netbox_available_prefixes" "bar" {
 func testAccAvailablePrefixWithParentPrefixEmptyCF(context map[string]interface{}) string {
 	return Nprintf(`
 resource "netbox_available_prefixes" "custom_fields" {
-	parent_prefix_id = 502
+	parent_prefix_id = 627
 	prefix_length = %{random_prefix_length}
   	is_pool          = true
   	status           = "active"
@@ -166,7 +165,7 @@ resource "netbox_available_prefixes" "custom_fields" {
   	role = "gcp"
   	site = "se1"
   	vlan = "gcp"
-  	#vrf  = "activision"
+  	vrf  = "activision"
   	tenant = "cloud"
 	tags = ["AvailablePrefix-acc%{random_suffix}-06"]
 
@@ -178,9 +177,6 @@ resource "netbox_available_prefixes" "custom_fields" {
 }`, context)
 }
 
-
-*/
-
 func testAccAvailablePrefixWithParentPrefixIdExample(context map[string]interface{}) string {
 	return Nprintf(`
 resource "netbox_available_prefixes" "gke-test" {
@@ -190,6 +186,7 @@ resource "netbox_available_prefixes" "gke-test" {
   	status           = "active"
 
 	tags = ["AvailablePrefix-acc%{random_suffix}-01", "AvailablePrefix-acc%{random_suffix}-02", "AvailablePrefix-acc%{random_suffix}-03"]
+	custom_fields {}
 }`, context)
 }
 func testAccCheckAvailablePrefixesDestroyProducer(t *testing.T) func(s *terraform.State) error {

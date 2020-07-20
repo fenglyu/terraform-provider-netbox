@@ -11,7 +11,10 @@ import (
 func TestAccDataSourceAvailablePrefixes_basic(t *testing.T) {
 
 	context := map[string]interface{}{
-		"parent_prefix_id":     502,
+		// vrf global
+		//"parent_prefix_id":     502,
+		// vrf "activison", choose the right parent_prefix_id if you enabled vrf
+		"parent_prefix_id":     627,
 		"random_prefix_length": randIntRange(t, 16, 30),
 	}
 
@@ -104,9 +107,10 @@ resource "netbox_available_prefixes" "foo" {
   role = "gcp"
   site = "se1"
   vlan = "gcp"
-  #vrf  = "activision"
+  vrf  = "activision"
   tenant = "cloud"
 
+  custom_fields  {}
   description = "testAccDataSourceComputeInstanceConfig description"
   tags        = ["datasource-AvailablePrefix-acc01", "datasource-AvailablePrefix-acc02", "datasource-AvailablePrefix-acc03"]
 }
@@ -127,11 +131,14 @@ resource "netbox_available_prefixes" "foo" {
   role = "gcp"
   site = "se1"
   vlan = "gcp"
-  #vrf  = "activision"
+  vrf  = "activision"
   tenant = "cloud"
 
   description = "testAccDataSourceComputeInstanceConfig description"
   tags        = ["datasource-AvailablePrefix-acc06", "datasource-AvailablePrefix-acc04", "datasource-AvailablePrefix-acc05"]
+  custom_fields  {}
+
+
 }
 
 data "netbox_available_prefixes" "bar"{

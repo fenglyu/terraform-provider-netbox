@@ -34,7 +34,7 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 		Delete: resourceIpamAvailablePrefixesDelete,
 
 		Importer: &schema.ResourceImporter{
-			//	State: resourceIpamAvailablePrefixesImportState,
+			//State: resourceIpamAvailablePrefixesImportState,
 			State: schema.ImportStatePassthrough,
 		},
 		SchemaVersion: 1,
@@ -131,36 +131,36 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 			},
 			// Blizzard's custom_fields
 			"custom_fields": {
-				Type:        schema.TypeList,
-				Optional:    true,
-				ConfigMode:  schema.SchemaConfigModeAttr,
+				Type:     schema.TypeList,
+				Required: true,
+				//Optional:   true,
+				ConfigMode: schema.SchemaConfigModeAttr,
+				//ForceNew:    true,
 				MaxItems:    1,
 				Description: "Set of customized key/value pairs created for prefix.",
-				//DiffSuppressFunc: emptyOrDefaultStringSuppress(""),
-				//Elem:        &schema.Schema{Type: schema.TypeString},
 				/*				*/
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"helpers": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "helpers (to be explained)",
-							Default:     "",
-							//DiffSuppressFunc: emptyOrDefaultStringSuppress(""),
+							Type:             schema.TypeString,
+							Optional:         true,
+							Description:      "helpers (to be explained)",
+							Default:          "",
+							DiffSuppressFunc: emptyOrDefaultStringSuppress(""),
 						},
 						"ipv4_acl_in": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "ipv4_acl_in (to be explained)",
-							Default:     "",
-							//DiffSuppressFunc: emptyOrDefaultStringSuppress(""),
+							Type:             schema.TypeString,
+							Optional:         true,
+							Description:      "ipv4_acl_in (to be explained)",
+							Default:          "",
+							DiffSuppressFunc: emptyOrDefaultStringSuppress(""),
 						},
 						"ipv4_acl_out": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							Description: "ipv4_acl_out (to be explained)",
-							Default:     "",
-							//DiffSuppressFunc: emptyOrDefaultStringSuppress(""),
+							Type:             schema.TypeString,
+							Optional:         true,
+							Description:      "ipv4_acl_out (to be explained)",
+							Default:          "",
+							DiffSuppressFunc: emptyOrDefaultStringSuppress(""),
 						},
 					},
 				},
@@ -181,6 +181,7 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 				Description: "Last updated timestamp",
 			},
 		},
+
 		CustomizeDiff: customdiff.All(
 			customdiff.If(
 				func(d *schema.ResourceDiff, meta interface{}) bool {
@@ -189,6 +190,7 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 				suppressEmptyCustomFieldsDiff,
 			),
 		),
+		/**/
 	}
 }
 
@@ -273,9 +275,8 @@ func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) 
 	}
 
 	var customFields interface{}
-
 	if cfData, ok := d.GetOk("custom_fields"); ok {
-		if cfMap, err := expandCustomFields(cfData); err == nil {
+		if cfMap, err := expandCustomFields(d, cfData); err == nil {
 			customFields = cfMap
 			wPrefix.CustomFields = customFields
 		} else {
@@ -315,29 +316,6 @@ func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) 
 	}
 	availablePrefix := res.GetPayload()
 
-	//  Due to the bug in API `ipam/prefixes/{ID}/available-prefixes/` which can't setup the right vrf
-	//  Here we update its vrf as a fix, The following section can be removed once the bug is fixed in
-	//  future releases.
-	if vrf != nil {
-		vrfP := models.WritablePrefix{
-			Vrf:    &vrf.ID,
-			Prefix: availablePrefix.Prefix,
-		}
-		vrfpartialUpdate := ipam.IpamPrefixesPartialUpdateParams{
-			ID:   availablePrefix.ID,
-			Data: &vrfP,
-		}
-		vrfpartialUpdate.WithContext(context.Background())
-		partialUpdatePrefixRes, _ := json.Marshal(vrfpartialUpdate)
-		log.Println("partialUpdatePrefix: ", string(partialUpdatePrefixRes))
-
-		vrfRes, uerr := config.client.Ipam.IpamPrefixesPartialUpdate(&vrfpartialUpdate, nil)
-		if uerr != nil {
-			d.SetId("")
-			return fmt.Errorf("%v %v", vrfRes, uerr)
-		}
-	}
-
 	d.SetId(fmt.Sprintf("%d", availablePrefix.ID))
 
 	return resourceIpamAvailablePrefixesRead(d, m)
@@ -345,6 +323,9 @@ func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) 
 
 func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
+
+	log.Println("d state", d.State())
+	log.Println("custom_fields.# ", d.Get("custom_fields.#"))
 
 	prefix, err := getIpamPrefix(config, d)
 	if err != nil || prefix == nil {
@@ -355,8 +336,15 @@ func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) er
 	//d.Set("id", prefix.ID)
 	d.Set("description", prefix.Description)
 
-	log.Println(flatterCustomFields(prefix.CustomFields))
-	d.Set("custom_fields", flatterCustomFields(prefix.CustomFields))
+	log.Println("CustomFields: ", flatterCustomFields(d, prefix.CustomFields))
+
+	if prefix != nil && prefix.CustomFields != nil {
+		d.Set("custom_fields", flatterCustomFields(d, prefix.CustomFields))
+	}
+
+	log.Println("d state", d.State())
+	log.Println("custom_fields.# ", d.Get("custom_fields.#"))
+
 	d.Set("is_pool", prefix.IsPool)
 	d.Set("created", prefix.Created.String())
 	d.Set("family", prefix.Family)
@@ -442,9 +430,14 @@ func resourceIpamAvailablePrefixesUpdate(d *schema.ResourceData, m interface{}) 
 	}
 	if d.HasChange("custom_fields") && !d.IsNewResource() {
 		cfData := d.Get("custom_fields").([]interface{})
-		cfMap, _ := expandCustomFields(cfData)
-		writablePrefix.CustomFields = cfMap
+		log.Println("cfData	", cfData)
+		if cfMap, err := expandCustomFields(d, cfData); err == nil {
+			writablePrefix.CustomFields = cfMap
+		} else {
+			log.Println(err)
+		}
 	}
+
 	if d.HasChange("site") && !d.IsNewResource() {
 		if siteId, err := getModelId(config, d, "site"); err == nil {
 			writablePrefix.Site = &siteId
@@ -727,4 +720,14 @@ func getModelId(config *Config, d *schema.ResourceData, key string) (int64, erro
 	default:
 		return -1, fmt.Errorf("Uknown key %s", key)
 	}
+}
+
+func resourceIpamAvailablePrefixesImportState(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	// config := meta.(*Config)
+	log.Println("resourceIpamAvailablePrefixesImportState ", d.Get("custom_fields"))
+	if _, ok := d.GetOk("custom_fields"); !ok {
+		d.Set("custom_fields", nil)
+	}
+
+	return []*schema.ResourceData{d}, nil
 }

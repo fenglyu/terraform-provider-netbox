@@ -3,6 +3,7 @@ package netbox
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"sort"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -138,7 +139,7 @@ func convertStringSet(set *schema.Set) []string {
 	return s
 }
 
-func expandCustomFields(v interface{}) (map[string]interface{}, error) {
+func expandCustomFields(d *schema.ResourceData, v interface{}) (map[string]interface{}, error) {
 	if v == nil {
 		// We can't set default values for lists.
 		return nil, nil
@@ -160,22 +161,50 @@ func expandCustomFields(v interface{}) (map[string]interface{}, error) {
 	if v, ok := original["helpers"]; ok {
 		cf["helpers"] = v.(string)
 	}
-
 	if v, ok := original["ipv4_acl_in"]; ok {
 		cf["ipv4_acl_in"] = v.(string)
 	}
-
 	if v, ok := original["ipv4_acl_out"]; ok {
 		cf["ipv4_acl_out"] = v.(string)
 	}
+
 	return cf, nil
 }
 
-func flatterCustomFields(v interface{}) []map[string]interface{} {
-	cf := make([]map[string]interface{}, 0)
+func flatterCustomFields(d *schema.ResourceData, v interface{}) []map[string]interface{} {
+	cfs := make([]map[string]interface{}, 0)
 	if v == nil {
 		return nil
 	}
-	cf = append(cf, v.(map[string]interface{}))
-	return cf
+	cf, ok := v.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	result := make(map[string]interface{})
+	log.Println("flatterCustomFields  ", d.Get("custom_fields"))
+
+	if _, ok := cf["helpers"]; ok {
+		result["helpers"] = cf["helpers"]
+	}
+	if _, ok := cf["ipv4_acl_in"]; ok {
+		result["ipv4_acl_in"] = cf["ipv4_acl_in"]
+	}
+	if _, ok := cf["ipv4_acl_out"]; ok {
+		result["ipv4_acl_out"] = cf["ipv4_acl_out"]
+	}
+
+	log.Println("result  ", result)
+	cfs = append(cfs, result)
+	return cfs
+}
+
+func flatternDatasourceCF(d *schema.ResourceData, v interface{}) []map[string]interface{} {
+	if v == nil {
+		return nil
+	}
+	cf, ok := v.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	return []map[string]interface{}{cf}
 }
