@@ -1,5 +1,4 @@
 provider "netbox" {
-  request_timeout = "4m"
 }
 
 resource "netbox_available_prefixes" "gke-pods" {

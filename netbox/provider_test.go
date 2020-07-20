@@ -29,11 +29,6 @@ var netboxBasePathEnvVars = []string{
 	"NETBOX_BASE_PATH",
 }
 
-func getTestNetboxApiTokenFromEnv(t *testing.T) string {
-	skipIfEnvNotSet(t, netboxApiTokenEnvVars...)
-	return multiEnvSearch(netboxApiTokenEnvVars)
-}
-
 func multiEnvSearch(ks []string) string {
 	for _, k := range ks {
 		if v := os.Getenv(k); v != "" {
@@ -41,6 +36,21 @@ func multiEnvSearch(ks []string) string {
 		}
 	}
 	return ""
+}
+
+func getTestNetboxApiTokenFromEnv(t *testing.T) string {
+	skipIfEnvNotSet(t, netboxApiTokenEnvVars...)
+	return multiEnvSearch(netboxApiTokenEnvVars)
+}
+
+func getTestNetboxHostFromEnv(t *testing.T) string {
+	skipIfEnvNotSet(t, netboxHostEnvVars...)
+	return multiEnvSearch(netboxHostEnvVars)
+}
+
+func getTestNetboxBasePathFromEnv(t *testing.T) string {
+	skipIfEnvNotSet(t, netboxBasePathEnvVars...)
+	return multiEnvSearch(netboxBasePathEnvVars)
 }
 
 func skipIfEnvNotSet(t *testing.T, envs ...string) {
@@ -56,9 +66,10 @@ func skipIfEnvNotSet(t *testing.T, envs ...string) {
 	}
 }
 
+/*
 func randInt(t *testing.T) int {
 	return rand.New(rand.NewSource(time.Now().UnixNano())).Int()
-}
+}*/
 
 func randIntRange(t *testing.T, min, max int) int {
 	return rand.New(rand.NewSource(time.Now().UnixNano())).Intn(max-min) + min
@@ -161,9 +172,11 @@ provider "netbox" {
 }
 
 resource "netbox_available_prefixes" "default" {
-	parent_prefix_id = 302
+	parent_prefix_id = 502
 	prefix_length = %{random_prefix_length}
 	tags = ["BasePathTest-acc%{random_suffix}-01", "BasePathTest-acc%{random_suffix}-02", "BasePathTest-acc%{random_suffix}-03"]
+
+  	custom_fields  {}
 }
 `, context)
 }

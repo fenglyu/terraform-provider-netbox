@@ -4,8 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/fenglyu/go-netbox/netbox/client/dcim"
-	"github.com/fenglyu/go-netbox/netbox/client/tenancy"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
 	"log"
 	"strconv"
 	"strings"
@@ -14,7 +13,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 
+	"github.com/fenglyu/go-netbox/netbox/client/dcim"
 	"github.com/fenglyu/go-netbox/netbox/client/ipam"
+	"github.com/fenglyu/go-netbox/netbox/client/tenancy"
 	"github.com/fenglyu/go-netbox/netbox/models"
 )
 
@@ -33,7 +34,7 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 		Delete: resourceIpamAvailablePrefixesDelete,
 
 		Importer: &schema.ResourceImporter{
-			//	State: resourceIpamAvailablePrefixesImportState,
+			//State: resourceIpamAvailablePrefixesImportState,
 			State: schema.ImportStatePassthrough,
 		},
 		SchemaVersion: 1,
@@ -128,11 +129,41 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 				ValidateFunc: validation.StringLenBetween(0, 200),
 				Description:  "Describe the purpose of this prefix",
 			},
+			// Blizzard's custom_fields
 			"custom_fields": {
-				Type:        schema.TypeMap,
-				Optional:    true,
-				Description: "Custom fields",
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Type:     schema.TypeList,
+				Required: true,
+				//Optional:   true,
+				ConfigMode: schema.SchemaConfigModeAttr,
+				//ForceNew:    true,
+				MaxItems:    1,
+				Description: "Set of customized key/value pairs created for prefix.",
+				/*				*/
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"helpers": {
+							Type:             schema.TypeString,
+							Optional:         true,
+							Description:      "helpers (to be explained)",
+							Default:          "",
+							DiffSuppressFunc: emptyOrDefaultStringSuppress(""),
+						},
+						"ipv4_acl_in": {
+							Type:             schema.TypeString,
+							Optional:         true,
+							Description:      "ipv4_acl_in (to be explained)",
+							Default:          "",
+							DiffSuppressFunc: emptyOrDefaultStringSuppress(""),
+						},
+						"ipv4_acl_out": {
+							Type:             schema.TypeString,
+							Optional:         true,
+							Description:      "ipv4_acl_out (to be explained)",
+							Default:          "",
+							DiffSuppressFunc: emptyOrDefaultStringSuppress(""),
+						},
+					},
+				},
 			},
 			"created": {
 				Type:        schema.TypeString,
@@ -150,7 +181,16 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 				Description: "Last updated timestamp",
 			},
 		},
-		//	CustomizeDiff: nil,
+
+		CustomizeDiff: customdiff.All(
+			customdiff.If(
+				func(d *schema.ResourceDiff, meta interface{}) bool {
+					return d.HasChange("custom_fields")
+				},
+				suppressEmptyCustomFieldsDiff,
+			),
+		),
+		/**/
 	}
 }
 
@@ -236,8 +276,12 @@ func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) 
 
 	var customFields interface{}
 	if cfData, ok := d.GetOk("custom_fields"); ok {
-		customFields = cfData.(map[string]string)
-		wPrefix.CustomFields = customFields
+		if cfMap, err := expandCustomFields(d, cfData); err == nil {
+			customFields = cfMap
+			wPrefix.CustomFields = customFields
+		} else {
+			log.Println(err)
+		}
 	}
 
 	// If parent prefix is given
@@ -272,28 +316,6 @@ func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) 
 	}
 	availablePrefix := res.GetPayload()
 
-	//  Duo the bug in API `ipam/prefixes/{ID}/available-prefixes/` which can't setup the right vrf
-	//  Here we update its vrf as a fixup
-	if vrf != nil {
-		vrfP := models.WritablePrefix{
-			Vrf:    &vrf.ID,
-			Prefix: availablePrefix.Prefix,
-		}
-		vrfpartialUpdate := ipam.IpamPrefixesPartialUpdateParams{
-			ID:   availablePrefix.ID,
-			Data: &vrfP,
-		}
-		vrfpartialUpdate.WithContext(context.Background())
-		partialUpdatePrefixRes, _ := json.Marshal(vrfpartialUpdate)
-		log.Println("partialUpdatePrefix: ", string(partialUpdatePrefixRes))
-
-		vrfRes, uerr := config.client.Ipam.IpamPrefixesPartialUpdate(&vrfpartialUpdate, nil)
-		if uerr != nil {
-			d.SetId("")
-			return fmt.Errorf("%v %v", vrfRes, uerr)
-		}
-	}
-
 	d.SetId(fmt.Sprintf("%d", availablePrefix.ID))
 
 	return resourceIpamAvailablePrefixesRead(d, m)
@@ -301,6 +323,9 @@ func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) 
 
 func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) error {
 	config := m.(*Config)
+
+	log.Println("d state", d.State())
+	log.Println("custom_fields.# ", d.Get("custom_fields.#"))
 
 	prefix, err := getIpamPrefix(config, d)
 	if err != nil || prefix == nil {
@@ -310,7 +335,16 @@ func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) er
 	log.Println("[INFO] resourceIpamPrefixesRead ", prefix)
 	//d.Set("id", prefix.ID)
 	d.Set("description", prefix.Description)
-	d.Set("custom_fields", prefix.CustomFields)
+
+	log.Println("CustomFields: ", flatterCustomFields(d, prefix.CustomFields))
+
+	if prefix != nil && prefix.CustomFields != nil {
+		d.Set("custom_fields", flatterCustomFields(d, prefix.CustomFields))
+	}
+
+	log.Println("d state", d.State())
+	log.Println("custom_fields.# ", d.Get("custom_fields.#"))
+
 	d.Set("is_pool", prefix.IsPool)
 	d.Set("created", prefix.Created.String())
 	d.Set("family", prefix.Family)
@@ -325,9 +359,12 @@ func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) er
 	}
 
 	d.Set("prefix", prefix.Prefix)
-	pl := strings.Split(*prefix.Prefix, "/")[1]
-	prefixLength, _ := strconv.Atoi(pl)
-	d.Set("prefix_length", prefixLength)
+	if prefix.Prefix != nil && *prefix.Prefix != "" {
+		pl := strings.Split(*prefix.Prefix, "/")[1]
+		prefixLength, _ := strconv.Atoi(pl)
+		d.Set("prefix_length", prefixLength)
+	}
+
 	if prefix != nil && prefix.Site != nil {
 		d.Set("site", prefix.Site.Name)
 	} else {
@@ -392,9 +429,15 @@ func resourceIpamAvailablePrefixesUpdate(d *schema.ResourceData, m interface{}) 
 		writablePrefix.Tags = convertStringSet(d.Get("tags").(*schema.Set))
 	}
 	if d.HasChange("custom_fields") && !d.IsNewResource() {
-		cfData := d.Get("custom_fields").(map[string]string)
-		writablePrefix.CustomFields = cfData
+		cfData := d.Get("custom_fields").([]interface{})
+		log.Println("cfData	", cfData)
+		if cfMap, err := expandCustomFields(d, cfData); err == nil {
+			writablePrefix.CustomFields = cfMap
+		} else {
+			log.Println(err)
+		}
 	}
+
 	if d.HasChange("site") && !d.IsNewResource() {
 		if siteId, err := getModelId(config, d, "site"); err == nil {
 			writablePrefix.Site = &siteId
@@ -509,11 +552,13 @@ func getIpamPrefixes(config *Config, d *schema.ResourceData) ([]*models.Prefix, 
 	if err != nil {
 		return nil, err
 	}
-	ipamPrefixesReadOKRes, _ := json.Marshal(&ipamPrefixListBody.Payload.Results)
-	log.Println("ipamPrefixListBody", string(ipamPrefixesReadOKRes))
-	if ipamPrefixListBody == nil || *ipamPrefixListBody.Payload.Count < 1 {
+
+	if ipamPrefixListBody == nil || ipamPrefixListBody.Payload == nil || *ipamPrefixListBody.Payload.Count < 1 {
 		return nil, fmt.Errorf("Unknow prefix %s with ID %s, not found", prefix, d.Id())
 	}
+	// trace level log
+	ipamPrefixesReadOKRes, _ := json.Marshal(&ipamPrefixListBody.Payload.Results)
+	log.Println("[getIpamPrefixes] ipamPrefixListBody", string(ipamPrefixesReadOKRes))
 
 	return ipamPrefixListBody.Payload.Results, nil
 }
@@ -547,12 +592,13 @@ func getIpamRoles(config *Config, d *schema.ResourceData) ([]*models.Role, error
 		fmt.Println("IpamRolesList ", err)
 	}
 
+	if roleRes == nil || roleRes.Payload == nil || *roleRes.Payload.Count < 1 {
+		return nil, fmt.Errorf("Unknow role %s , not found", roleName)
+	}
+	// trace level log
 	roleReadOKRes, _ := json.Marshal(&roleRes.Payload.Results)
 	log.Println("roleReadOKRes ", string(roleReadOKRes))
 
-	if roleRes == nil || *roleRes.Payload.Count < 1 {
-		return nil, fmt.Errorf("Unknow role %s , not found", roleName)
-	}
 	return roleRes.Payload.Results, nil
 }
 
@@ -571,7 +617,7 @@ func getDcimSites(config *Config, d *schema.ResourceData) ([]*models.Site, error
 		return nil, fmt.Errorf("DcimSitesListParams %s", err.Error())
 	}
 
-	if siteRes == nil || *siteRes.Payload.Count < 1 {
+	if siteRes == nil || siteRes.Payload == nil || *siteRes.Payload.Count < 1 {
 		return nil, fmt.Errorf("Unknow Site %s , not found", siteName)
 	}
 	return siteRes.Payload.Results, nil
@@ -591,7 +637,7 @@ func getIpamVlans(config *Config, d *schema.ResourceData) ([]*models.VLAN, error
 	if err != nil {
 		return nil, fmt.Errorf("IpamVlansList %s", err.Error())
 	}
-	if vlanData == nil || *vlanData.Payload.Count < 1 {
+	if vlanData == nil || vlanData.Payload == nil || *vlanData.Payload.Count < 1 {
 		return nil, fmt.Errorf("Unknow vlan %s , not found", vlanName)
 	}
 	return vlanData.Payload.Results, nil
@@ -612,7 +658,7 @@ func getIpamVrfs(config *Config, d *schema.ResourceData) ([]*models.VRF, error) 
 	if err != nil {
 		return nil, fmt.Errorf("IpamVlansList %s", err.Error())
 	}
-	if vrfData == nil || *vrfData.Payload.Count < 1 {
+	if vrfData == nil || vrfData.Payload == nil || *vrfData.Payload.Count < 1 {
 		return nil, fmt.Errorf("Unknow vrf %s , not found", vrfName)
 	}
 	return vrfData.Payload.Results, nil
@@ -633,7 +679,7 @@ func getTenancyTenant(config *Config, d *schema.ResourceData) ([]*models.Tenant,
 		return nil, fmt.Errorf("TenancyTenantsList %s", err.Error())
 	}
 
-	if tenantData == nil || *tenantData.Payload.Count < 1 {
+	if tenantData == nil || tenantData.Payload == nil || *tenantData.Payload.Count < 1 {
 		return nil, fmt.Errorf("Unknow Tenant %s , not found", tenantName)
 	}
 	return tenantData.Payload.Results, nil
@@ -674,4 +720,14 @@ func getModelId(config *Config, d *schema.ResourceData, key string) (int64, erro
 	default:
 		return -1, fmt.Errorf("Uknown key %s", key)
 	}
+}
+
+func resourceIpamAvailablePrefixesImportState(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	// config := meta.(*Config)
+	log.Println("resourceIpamAvailablePrefixesImportState ", d.Get("custom_fields"))
+	if _, ok := d.GetOk("custom_fields"); !ok {
+		d.Set("custom_fields", nil)
+	}
+
+	return []*schema.ResourceData{d}, nil
 }
