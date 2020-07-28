@@ -9,29 +9,17 @@ variable "project_xpn_subnets" {
       region              = "us-west2"
       secondary_ip_ranges = {
         "gke-pods" = {
+          is_routable         = false
           network_cidr_prefix = 24
         }
         "gke-services" = {
+          is_routable         = false
           network_cidr_prefix = 27
         }
       }
       reserved_peering_ranges = {
         "master_ipv4_range" = {
           network_cidr_prefix = 28
-        }
-      }
-    }
-    "usw2-sec" = {
-      #network_address     = "10.1.2.0"
-      network_cidr_prefix = 29
-      region              = "us-west2"
-      secondary_ip_ranges = {
-        "gke-pods" = {
-          network_address     = "10.1.2.0"
-          network_cidr_prefix = 23
-        }
-        "gke-services" = {
-          network_cidr_prefix = 26
         }
       }
     }
@@ -62,7 +50,7 @@ locals {
 
     test-xpn-net = {
       global  = 502
-      rfc1112 = 7777
+      rfc1112 = 627
       role    = "gcp"
     }
 
@@ -166,7 +154,7 @@ resource "netbox_available_prefixes" "range" {
 
   custom_fields {}
   #  description   = "${module.gcp-project.project_id} || ${each.key}"
-  description   = "test || ${each.key}"
+  description   = "test 001|| ${each.key}"
   is_pool       = false
   prefix_length = lookup(each.value, "prefix_length", null)
   role          = local.ipam_parent_prefixes[local.xpn_host_network_name]["role"]
@@ -214,7 +202,8 @@ resource "netbox_available_prefixes" "range" {
     : local.ipam_parent_prefixes[local.xpn_host_network_name]["rfc1112"]
   )
 
-  //  lifecycle {
-  //   ignore_changes = [vrf, custom_fields]
-  //}
+  lifecycle {
+    ignore_changes = [vrf]
+    //, custom_fields]
+  }
 }
