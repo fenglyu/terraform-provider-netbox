@@ -59,4 +59,9 @@ The following arguments are supported:
 * `vrf`                 - The VRF this prefix is on.
 * `description`         - A brief description of this resource.
 * `custom_fields`       - Customized fields for prefix
+---
+The `custom_fields` field might include fields,
+* `helpers` - (Optional) Blizzard Customized Field.
+* `ipv4_acl_in` - (Optional) Blizzard Customized Field.
+* `ipv4_acl_out` - (Optional) Blizzard Customized Field.
 

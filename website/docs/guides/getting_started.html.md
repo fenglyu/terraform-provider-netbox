@@ -8,7 +8,7 @@ description: |-
 
 # Getting started with the Netbox provider
 
-~> **Note:** The provider is compatible with terraform v0.12.*, But it might need to be noticed that Terraform's dev version `v0.13.0-dev` has problem finding the provider. 
+~> **Note:** The provider is compatible with terraform v0.12.*, But it hasn't been tested with terraform `v0.13-dev`, It generally should work.
 
 
 ## Before you begin

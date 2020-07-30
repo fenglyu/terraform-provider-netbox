@@ -24,6 +24,8 @@ var (
 		"parent_prefix",
 		"parent_prefix_id",
 	}
+
+	lockNamePrefix = "availableprefixes"
 )
 
 func resourceIpamAvailablePrefixes() *schema.Resource {
@@ -306,7 +308,9 @@ func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) 
 
 	paramRes, _ := json.Marshal(param)
 	log.Printf("[INFO] Requesting AvaliablePrefix creation %s", string(paramRes))
-
+	// Lock/Unlock have been deprecated, Rewrite them after migrated to sdk v2
+	mutexKV.Lock(fmt.Sprintf("%s_%d", lockNamePrefix, prefix_id))
+	defer mutexKV.Unlock(fmt.Sprintf("%s_%d", lockNamePrefix, prefix_id))
 	res, err := config.client.Ipam.IpamPrefixesAvailablePrefixesCreate(&param, nil)
 	if err != nil {
 		// The resource didn't actually create
@@ -477,6 +481,9 @@ func resourceIpamAvailablePrefixesUpdate(d *schema.ResourceData, m interface{}) 
 	partialUpdatePrefixRes, _ := json.Marshal(partialUpdatePrefix)
 	log.Println("resourceIpamAvailablePrefixesUpdate partialUpdatePrefix: ", string(partialUpdatePrefixRes))
 
+	mutexKV.Lock(fmt.Sprintf("%s_%d", lockNamePrefix, id))
+	defer mutexKV.Unlock(fmt.Sprintf("%s_%d", lockNamePrefix, id))
+
 	res, uerr := config.client.Ipam.IpamPrefixesPartialUpdate(&partialUpdatePrefix, nil)
 	if uerr != nil {
 		// TODO Support verbose response body here
@@ -498,6 +505,9 @@ func resourceIpamAvailablePrefixesDelete(d *schema.ResourceData, m interface{}) 
 		ID: int64(id),
 	}
 	params.WithContext(context.Background())
+	mutexKV.Lock(fmt.Sprintf("%s_%d", lockNamePrefix, id))
+	defer mutexKV.Unlock(fmt.Sprintf("%s_%d", lockNamePrefix, id))
+
 	_, derr := config.client.Ipam.IpamPrefixesDelete(&params, nil)
 	if derr != nil {
 		return derr
