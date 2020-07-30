@@ -6,7 +6,7 @@ hadolint_available := $(shell hadolint --help > /dev/null 2>&1; echo $$?)
 hadolint_command := hadolint --ignore DL3003 --ignore DL3008 --ignore DL3013 --ignore DL3018 --ignore DL3028 --ignore DL4000 --ignore DL4001
 hadolint_container := hadolint/hadolint:latest
 
-VERSION ?= latest
+VERSION ?= v2.8.8
 IS_LATEST := false
 dockerfile := Dockerfile
 
@@ -45,10 +45,10 @@ ifeq ($(IS_LATEST),true)
 endif
 
 compose-up:
-	@cd netbox; docker-compose up -d
+	@(cd netbox; docker-compose -p netbox_v2.8.8  up -d)
 
 compose-down:
-	@cd netbox; docker-compose down -d
+	@(cd netbox; docker-compose -p netbox_v2.8.8 down)
 
 push-image: prep
 	@docker push $(NAMESPACE)/netbox:$(VERSION)

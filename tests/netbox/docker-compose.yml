@@ -1,5 +1,6 @@
 version: '3.8'
 
+
 services:
   db:
     image: postgres:latest
@@ -9,7 +10,7 @@ services:
       POSTGRES_PASSWORD: J5brHrAXFLQSif0K
       POSTGRES_DB: netbox
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata288:/var/lib/postgresql/data
     networks:
       - backend
 
@@ -19,8 +20,7 @@ services:
       - backend
 
   netbox:
-    #build: ./netbox
-    image: cloud/netbox:latest
+    image: cloud/netbox:v2.8.8
     depends_on:
       - db
       - redis
@@ -30,21 +30,17 @@ services:
 
   # add "127.0.0.1 netbox.k8s.me netbox" to hosts file during development
   nginx:
-    #build: ./nginx
-    image: cloud/nginx:latest
+    image: cloud/nginx:v2.8.8
     depends_on:
       - netbox
     ports:
-      - 80:80
       - 443:443
     networks:
       - frontend
 
 networks:
   frontend:
-#    driver: overlay
   backend:
-#    driver: overlay
 
 volumes:
-  pgdata:
+  pgdata288:
