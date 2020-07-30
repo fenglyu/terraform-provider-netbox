@@ -20,7 +20,7 @@ services:
 
   netbox:
     #build: ./netbox
-    image: cloud/netbox:latest
+    image: cloud/netbox:2.4.7
     depends_on:
       - db
       - redis
@@ -31,7 +31,7 @@ services:
   # add "127.0.0.1 netbox.k8s.me netbox" to hosts file during development
   nginx:
     #build: ./nginx
-    image: cloud/nginx:latest
+    image: cloud/nginx:2.4.7
     depends_on:
       - netbox
     ports:
