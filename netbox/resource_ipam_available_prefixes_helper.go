@@ -1,6 +1,9 @@
 package netbox
 
 import (
+	"encoding/json"
+	"fmt"
+	"log"
 	"sort"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -8,6 +11,7 @@ import (
 	"github.com/fenglyu/go-netbox/netbox/models"
 )
 
+/*
 func flatternFamily(f *models.PrefixFamily) []map[string]interface{} {
 	if f == nil {
 		return nil
@@ -18,6 +22,7 @@ func flatternFamily(f *models.PrefixFamily) []map[string]interface{} {
 	}}
 }
 
+// nested_role struct for netbox v2.8.6
 func flatternRole(nr *models.NestedRole) []map[string]interface{} {
 	return []map[string]interface{}{{
 		"id":           nr.ID,
@@ -26,6 +31,17 @@ func flatternRole(nr *models.NestedRole) []map[string]interface{} {
 		"slug":         nr.Slug,
 		"url":          nr.URL.String(),
 		"vlan_count":   nr.VlanCount,
+	}}
+}
+*/
+
+// NestedRole struct for netbox v2.4.7
+func flatternRoleV247(nr *models.NestedRole) []map[string]interface{} {
+	return []map[string]interface{}{{
+		"id":   nr.ID,
+		"name": nr.Name,
+		"slug": nr.Slug,
+		"url":  nr.URL.String(),
 	}}
 }
 
@@ -56,6 +72,14 @@ func flatternNestedTenant(nt *models.NestedTenant) []map[string]interface{} {
 	}
 }
 
+func jsonfy(rs []map[string]interface{}) string {
+	st, err := json.Marshal(rs)
+	if err != nil {
+		return ""
+	}
+	return string(st)
+}
+
 func flatternNestedVLAN(nv *models.NestedVLAN) []map[string]interface{} {
 	return []map[string]interface{}{{
 		"id":           nv.ID,
@@ -66,6 +90,17 @@ func flatternNestedVLAN(nv *models.NestedVLAN) []map[string]interface{} {
 	}}
 }
 
+// NestedVRF struct for netbox v2.4.7
+func flatternNestedVRFV247(nv *models.NestedVRF) []map[string]interface{} {
+	return []map[string]interface{}{{
+		"id":   nv.ID,
+		"name": nv.Name,
+		"url":  nv.URL.String(),
+		"rd":   nv.Rd,
+	}}
+}
+
+/*
 func flatternNestedVRF(nv *models.NestedVRF) []map[string]interface{} {
 	return []map[string]interface{}{{
 		"id":           nv.ID,
@@ -75,6 +110,8 @@ func flatternNestedVRF(nv *models.NestedVRF) []map[string]interface{} {
 		"rd":           nv.Rd,
 	}}
 }
+
+
 func flattenCustomFields(p *models.Prefix) map[string]string {
 	cf := p.CustomFields.(map[string]interface{})
 	cfMap := make(map[string]string)
@@ -84,6 +121,14 @@ func flattenCustomFields(p *models.Prefix) map[string]string {
 	return cfMap
 }
 
+
+type CustomFields struct {
+	Helpers      string `json:"helpers"`
+	Ipv4_acl_in  string `json:"ipv4_acl_in"`
+	Ipv4_acl_out string `json:"ipv4_acl_out"`
+}
+
+*/
 func convertStringSet(set *schema.Set) []string {
 	s := make([]string, 0, set.Len())
 	for _, v := range set.List() {
@@ -92,4 +137,74 @@ func convertStringSet(set *schema.Set) []string {
 	sort.Strings(s)
 
 	return s
+}
+
+func expandCustomFields(d *schema.ResourceData, v interface{}) (map[string]interface{}, error) {
+	if v == nil {
+		// We can't set default values for lists.
+		return nil, nil
+	}
+
+	ls := v.([]interface{})
+	cf := make(map[string]interface{}, len(ls))
+
+	if len(ls) == 0 {
+		// We can't set default values for lists
+		return cf, nil
+	}
+
+	if len(ls) > 1 || ls[0] == nil {
+		return nil, fmt.Errorf("expected exactly one custom field")
+	}
+
+	original := ls[0].(map[string]interface{})
+	if v, ok := original["helpers"]; ok {
+		cf["helpers"] = v.(string)
+	}
+	if v, ok := original["ipv4_acl_in"]; ok {
+		cf["ipv4_acl_in"] = v.(string)
+	}
+	if v, ok := original["ipv4_acl_out"]; ok {
+		cf["ipv4_acl_out"] = v.(string)
+	}
+
+	return cf, nil
+}
+
+func flatterCustomFields(d *schema.ResourceData, v interface{}) []map[string]interface{} {
+	cfs := make([]map[string]interface{}, 0)
+	if v == nil {
+		return nil
+	}
+	cf, ok := v.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	result := make(map[string]interface{})
+	log.Println("flatterCustomFields  ", d.Get("custom_fields"))
+
+	if _, ok := cf["helpers"]; ok {
+		result["helpers"] = cf["helpers"]
+	}
+	if _, ok := cf["ipv4_acl_in"]; ok {
+		result["ipv4_acl_in"] = cf["ipv4_acl_in"]
+	}
+	if _, ok := cf["ipv4_acl_out"]; ok {
+		result["ipv4_acl_out"] = cf["ipv4_acl_out"]
+	}
+
+	log.Println("result  ", result)
+	cfs = append(cfs, result)
+	return cfs
+}
+
+func flatternDatasourceCF(d *schema.ResourceData, v interface{}) []map[string]interface{} {
+	if v == nil {
+		return nil
+	}
+	cf, ok := v.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	return []map[string]interface{}{cf}
 }
