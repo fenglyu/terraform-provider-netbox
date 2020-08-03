@@ -27,7 +27,16 @@ func dataSourceIpamAvailablePrefixes() *schema.Resource {
 		Optional:    true,
 		Description: "An identifier for the prefix",
 	}
-
+	dsSchema["role"] = &schema.Schema{
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Prefix Role",
+	}
+	dsSchema["tag"] = &schema.Schema{
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "Prefix tag",
+	}
 	return &schema.Resource{
 		Read:   dataSourceIpamAvailablePrefixesRead,
 		Schema: dsSchema,
@@ -51,19 +60,33 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 			return fmt.Errorf("Cannot determine prefix with ID %d", id)
 		}
 		prefix = ipamPrefixesReadOK.Payload
-	} else if v, ok := d.GetOk("prefix"); ok {
-		pStr := v.(string)
+	} else {
+		// Grab the rest of our parameters and make a query
+		param := ipam.IpamPrefixesListParams{}
 
-		withinInclude := pStr
-		prefixLength, err := strconv.Atoi(strings.Split(withinInclude, "/")[1])
-		if err != nil {
-			return fmt.Errorf("Error in [getIpamPrefixes] %v", err)
+		if v, ok := d.GetOk("prefix"); ok {
+			prefix := v.(string)
+
+			withinInclude := prefix
+			prefixLength, err := strconv.Atoi(strings.Split(withinInclude, "/")[1])
+			if err != nil {
+				return fmt.Errorf("Error in [getIpamPrefixes] %v", err)
+			}
+			maskLength := float64(prefixLength)
+			param.MaskLength = &maskLength
+			param.WithinInclude = &withinInclude
 		}
-		maskLength := float64(prefixLength)
-		param := ipam.IpamPrefixesListParams{
-			MaskLength:    &maskLength,
-			WithinInclude: &withinInclude,
+
+		if v, ok := d.GetOk("tag"); ok {
+			tag := v.(string)
+			param.Tag = &tag
 		}
+
+		if v, ok := d.GetOk("role"); ok {
+			role := v.(string)
+			param.Role = &role
+		}
+
 		param.WithContext(context.Background())
 		ipamPrefixListBody, err := config.client.Ipam.IpamPrefixesList(&param, nil)
 		if err != nil {
@@ -73,7 +96,7 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 		if ipamPrefixListBody == nil || ipamPrefixListBody.Payload == nil || *ipamPrefixListBody.Payload.Count < 1 {
 			//return fmt.Errorf("Unknow prefix %s not found", *prefix.Prefix)
 			d.SetId("")
-			return fmt.Errorf("Unknow prefix %s not found", v)
+			return fmt.Errorf("Data lookup returned zero values")
 		}
 		// trace level output
 		ipamPrefixesReadOKRes, _ := json.Marshal(&ipamPrefixListBody.Payload.Results)
