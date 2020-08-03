@@ -5,7 +5,7 @@ DIR_NAME=netbox
 XC_ARCH=amd64
 XC_OS=linux darwin windows
 GIT_COMMIT=$$(git rev-parse HEAD)
-RELEASE_VERSION=$$(git describe --abbrev=0 --tags)
+RELEASE_VERSION=$$(git for-each-ref refs/tags --sort=-taggerdate --format='%(refname:short)' --count=1)
 version ?= v0.1.0
 LD_FLAGS=-s -w
 #TESTARGS=-v
