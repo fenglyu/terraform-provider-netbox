@@ -351,7 +351,7 @@ func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) er
 
 	d.Set("is_pool", prefix.IsPool)
 	d.Set("created", prefix.Created.String())
-	d.Set("family", prefix.Family)
+	d.Set("family", prefix.Family.Value)
 	d.Set("last_updated", prefix.LastUpdated.String())
 
 	if prefix != nil && prefix.Role != nil {

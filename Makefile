@@ -6,9 +6,9 @@ XC_ARCH=amd64
 XC_OS=linux darwin windows
 GIT_COMMIT=$$(git rev-parse HEAD)
 RELEASE_VERSION=$$(git for-each-ref refs/tags --sort=-taggerdate --format='%(refname:short)' --count=1)
-version ?= v0.1.0
+version ?= v0.1.2
 LD_FLAGS=-s -w
-#TESTARGS=-v
+TESTARGS=-v
 
 
 default: build
@@ -48,7 +48,7 @@ test: fmtcheck generate
 	go test $(TESTARGS) -timeout=30s $(TEST)
 
 testacc: fmtcheck
-	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 go test $(TEST) -v $(TESTARGS) -timeout 240m -ldflags="-X=github.com/fenglyu/terraform-provider-netbox/version.ProviderVersion=acc"
+	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 go test $(TEST) $(TESTARGS) -timeout 240m -ldflags="-X=github.com/fenglyu/terraform-provider-netbox/version.ProviderVersion=acc"
 
 fmt:
 	@echo "==> Fixing source code with gofmt..."

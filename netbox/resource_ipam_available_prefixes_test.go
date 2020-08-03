@@ -18,6 +18,7 @@ func TestAccAvaliablePrefixes_basic(t *testing.T) {
 	context := map[string]interface{}{
 		"random_prefix_length": randIntRange(t, 16, 30),
 		"random_suffix":        randString(t, 10),
+		"parent_prefix_id":     testNetboxParentPrefixId,
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -34,7 +35,7 @@ func TestAccAvaliablePrefixes_basic(t *testing.T) {
 				ImportStateVerify: true,
 				// parent_prefix_id is the parent which we can't easily get without hacking
 				// vrf is not returned via GET "http://netbox.k8s.me/api/ipam/prefixes/{ID}/"
-				ImportStateVerifyIgnore: []string{"parent_prefix_id", "vrf"},
+				ImportStateVerifyIgnore: []string{"parent_prefix_id"},
 			},
 		},
 	})
@@ -44,6 +45,7 @@ func TestAccAvaliablePrefixes_basic1(t *testing.T) {
 	context := map[string]interface{}{
 		"random_prefix_length": randIntRange(t, 16, 30),
 		"random_suffix":        randString(t, 10),
+		"parent_prefix_id":     testNetboxParentPrefixIdWithVrf,
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -58,7 +60,7 @@ func TestAccAvaliablePrefixes_basic1(t *testing.T) {
 				ResourceName:            "netbox_available_prefixes.foo",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"parent_prefix_id", "vrf"},
+				ImportStateVerifyIgnore: []string{"parent_prefix_id"},
 			},
 		},
 	})
@@ -68,6 +70,7 @@ func TestAccAvaliablePrefixes_basic2(t *testing.T) {
 	context := map[string]interface{}{
 		"random_prefix_length": randIntRange(t, 16, 30),
 		"random_suffix":        randString(t, 10),
+		"parent_prefix_id":     testNetboxParentPrefixId,
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -82,7 +85,7 @@ func TestAccAvaliablePrefixes_basic2(t *testing.T) {
 				ResourceName:            "netbox_available_prefixes.bar",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"parent_prefix_id", "custom_fields"},
+				ImportStateVerifyIgnore: []string{"parent_prefix_id"},
 			},
 		},
 	})
@@ -92,6 +95,7 @@ func TestAccAvaliablePrefixes_EmptyCustomFields(t *testing.T) {
 	context := map[string]interface{}{
 		"random_prefix_length": randIntRange(t, 16, 30),
 		"random_suffix":        randString(t, 10),
+		"parent_prefix_id":     testNetboxParentPrefixIdWithVrf,
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -106,7 +110,7 @@ func TestAccAvaliablePrefixes_EmptyCustomFields(t *testing.T) {
 				ResourceName:            "netbox_available_prefixes.custom_fields",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"parent_prefix_id", "custom_fields"},
+				ImportStateVerifyIgnore: []string{"parent_prefix_id"},
 			},
 		},
 	})
@@ -115,7 +119,7 @@ func TestAccAvaliablePrefixes_EmptyCustomFields(t *testing.T) {
 func testAccAvailablePrefixWithParentPrefixIdExample1(context map[string]interface{}) string {
 	return Nprintf(`
 resource "netbox_available_prefixes" "foo" {
-	parent_prefix_id = 627
+	parent_prefix_id = %{parent_prefix_id}
 	prefix_length = %{random_prefix_length}
   	is_pool          = true
   	status           = "active"
@@ -134,7 +138,7 @@ resource "netbox_available_prefixes" "foo" {
 func testAccAvailablePrefixWithParentPrefixIdExample2(context map[string]interface{}) string {
 	return Nprintf(`
 resource "netbox_available_prefixes" "bar" {
-	parent_prefix_id = 627
+	parent_prefix_id = %{parent_prefix_id}
 	prefix_length = %{random_prefix_length}
   	is_pool          = true
   	status           = "active"
@@ -157,7 +161,7 @@ resource "netbox_available_prefixes" "bar" {
 func testAccAvailablePrefixWithParentPrefixEmptyCF(context map[string]interface{}) string {
 	return Nprintf(`
 resource "netbox_available_prefixes" "custom_fields" {
-	parent_prefix_id = 627
+	parent_prefix_id = %{parent_prefix_id}
 	prefix_length = %{random_prefix_length}
   	is_pool          = true
   	status           = "active"
@@ -180,7 +184,7 @@ resource "netbox_available_prefixes" "custom_fields" {
 func testAccAvailablePrefixWithParentPrefixIdExample(context map[string]interface{}) string {
 	return Nprintf(`
 resource "netbox_available_prefixes" "gke-test" {
-	parent_prefix_id = 502
+	parent_prefix_id = %{parent_prefix_id}
 	prefix_length = %{random_prefix_length}
   	is_pool          = true
   	status           = "active"

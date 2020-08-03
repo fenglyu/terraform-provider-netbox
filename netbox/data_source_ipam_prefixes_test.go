@@ -11,10 +11,7 @@ import (
 func TestAccDataSourceAvailablePrefixes_basic(t *testing.T) {
 
 	context := map[string]interface{}{
-		// vrf global
-		//"parent_prefix_id":     502,
-		// vrf "activison", choose the right parent_prefix_id if you enabled vrf
-		"parent_prefix_id":     627,
+		"parent_prefix_id":     testNetboxParentPrefixIdWithVrf,
 		"random_prefix_length": randIntRange(t, 16, 30),
 	}
 
@@ -137,8 +134,6 @@ resource "netbox_available_prefixes" "foo" {
   description = "testAccDataSourceComputeInstanceConfig description"
   tags        = ["datasource-AvailablePrefix-acc06", "datasource-AvailablePrefix-acc04", "datasource-AvailablePrefix-acc05"]
   custom_fields  {}
-
-
 }
 
 data "netbox_available_prefixes" "bar"{

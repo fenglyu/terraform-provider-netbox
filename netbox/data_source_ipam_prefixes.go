@@ -90,7 +90,7 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 	d.Set("custom_fields", flatternDatasourceCF(d, prefix.CustomFields))
 	d.Set("is_pool", prefix.IsPool)
 	d.Set("created", prefix.Created.String())
-	d.Set("family", prefix.Family)
+	d.Set("family", prefix.Family.Value)
 	d.Set("last_updated", prefix.LastUpdated.String())
 
 	if prefix != nil && prefix.Role != nil {
