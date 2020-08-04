@@ -31,7 +31,7 @@ provider "netbox" {
 
 > Required field
 
-+ The `api_token` field should the Api token created in neox's user profile.
++ The `api_token` field should the Api token created in netbox user profile.
 + The `host` field should be the address of the netbox service.
 
 > Optional field

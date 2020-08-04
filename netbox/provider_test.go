@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -117,11 +118,15 @@ func randString(t *testing.T, length int) string {
 	return string(result)
 }
 
-var testAccProviders map[string]terraform.ResourceProvider
-var testAccProvider *schema.Provider
-var testAccRandomProvider *schema.Provider
-var testNetboxParentPrefixId int
-var testNetboxParentPrefixIdWithVrf int
+var (
+	testAccProviders      map[string]terraform.ResourceProvider
+	testAccProvider       *schema.Provider
+	testAccRandomProvider *schema.Provider
+
+	checkPrefixIdOnce               sync.Once
+	testNetboxParentPrefixId        int
+	testNetboxParentPrefixIdWithVrf int
+)
 
 func init() {
 	testAccProvider = Provider().(*schema.Provider)
@@ -131,6 +136,8 @@ func init() {
 		"netbox": testAccProvider,
 		"random": testAccRandomProvider,
 	}
+	// check the existance of two test parent prefix id
+	checkPrefixId()
 }
 
 func TestProvider(t *testing.T) {
@@ -139,7 +146,22 @@ func TestProvider(t *testing.T) {
 	}
 }
 
-func testPrefixExistWithID(t *testing.T, parentPrefixId int) error {
+func checkPrefixId() {
+	checkPrefixIdOnce.Do(initPrefixId)
+}
+
+func initPrefixId() {
+	// Test if given parent prefix id is available
+	if err := testNetboxParentPrefixDefault(); err != nil {
+		return
+	}
+	// 	Test if given parent prefix(with a vrf) id is available
+	if err := testNetboxParentPrefixWithVrf(); err != nil {
+		return
+	}
+}
+
+func testPrefixExistWithID(parentPrefixId int) error {
 
 	params := ipam.IpamPrefixesReadParams{
 		ID:      int64(parentPrefixId),
@@ -147,42 +169,37 @@ func testPrefixExistWithID(t *testing.T, parentPrefixId int) error {
 	}
 
 	config := &Config{
-		ApiToken: getTestNetboxApiTokenFromEnv(t),
-		Host:     getTestNetboxHostFromEnv(t),
-		BasePath: getTestNetboxBasePathFromEnv(t),
+		ApiToken: multiEnvSearch(netboxApiTokenEnvVars),
+		Host:     multiEnvSearch(netboxHostEnvVars),
+		BasePath: multiEnvSearch(netboxBasePathEnvVars),
 	}
 
 	err := config.LoadAndValidate(context.Background())
 	if err != nil {
-		t.Fatalf("error: %v", err)
+		return err
 	}
 
 	ipamPrefixesReadOK, err := config.client.Ipam.IpamPrefixesRead(&params, nil)
 	//t.Log(fmt.Sprintf("testPrefixExistWithID %v", ipamPrefixesReadOK))
 	if err != nil || ipamPrefixesReadOK == nil {
-		t.Fatalf("Cannot determine prefix with ID %d", parentPrefixId)
+		return fmt.Errorf("Cannot determine prefix with ID %d", parentPrefixId)
 	}
 	return nil
 }
 
-func testNetboxParentPrefixDefault(t *testing.T) error {
-	if ppid, err := strconv.Atoi(getNetBoxParentPrefixIdForTestingVarsFromEnv(t)); err != nil {
-		t.Fatal(err)
-	} else {
+func testNetboxParentPrefixDefault() error {
+
+	if ppid, err := strconv.Atoi(multiEnvSearch(netboxParentPrefixIdForTestingVars)); err == nil {
 		testNetboxParentPrefixId = ppid
 	}
-	t.Log(fmt.Sprintf("testNetboxParentPrefixDefault %d", testNetboxParentPrefixId))
-	return testPrefixExistWithID(t, testNetboxParentPrefixId)
+	return testPrefixExistWithID(testNetboxParentPrefixId)
 }
 
-func testNetboxParentPrefixWithVrf(t *testing.T) error {
-	if ppid, err := strconv.Atoi(getNetboxParentPrefixWithVrfIdForTestingVarsFromEnv(t)); err != nil {
-		t.Fatal(err)
-	} else {
+func testNetboxParentPrefixWithVrf() error {
+	if ppid, err := strconv.Atoi(multiEnvSearch(netboxParentPrefixWithVrfIdForTestingVars)); err == nil {
 		testNetboxParentPrefixIdWithVrf = ppid
 	}
-	t.Log(fmt.Sprintf("testNetboxParentPrefixWithVrf %d", testNetboxParentPrefixIdWithVrf))
-	return testPrefixExistWithID(t, testNetboxParentPrefixIdWithVrf)
+	return testPrefixExistWithID(testNetboxParentPrefixIdWithVrf)
 }
 
 func testAccPreCheck(t *testing.T) {
@@ -195,16 +212,12 @@ func testAccPreCheck(t *testing.T) {
 	if v := multiEnvSearch(netboxBasePathEnvVars); v == "" {
 		t.Fatalf("One of %s must be set for acceptance tests", strings.Join(netboxBasePathEnvVars, ", "))
 	}
-
-	// Test if given parent prefix id is available
-	if err := testNetboxParentPrefixDefault(t); err != nil {
-		t.Fatalf("testNetboxParentPrefixDefault %s", err.Error())
+	if v := multiEnvSearch(netboxParentPrefixIdForTestingVars); v == "" {
+		t.Fatalf("One of %s must be set for acceptance tests", strings.Join(netboxParentPrefixIdForTestingVars, ", "))
 	}
-	// 	Test if given parent prefix(with a vrf) id is available
-	if err := testNetboxParentPrefixWithVrf(t); err != nil {
-		t.Fatalf("testNetboxParentPrefixWithVrf %s", err.Error())
+	if v := multiEnvSearch(netboxParentPrefixWithVrfIdForTestingVars); v == "" {
+		t.Fatalf("One of %s must be set for acceptance tests", strings.Join(netboxParentPrefixWithVrfIdForTestingVars, ", "))
 	}
-	t.Log("testAccPreCheck Succeed")
 }
 
 func TestAccProviderBasePath_setBasePath(t *testing.T) {

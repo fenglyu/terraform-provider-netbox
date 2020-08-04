@@ -14,7 +14,7 @@ import (
 	"github.com/fenglyu/go-netbox/netbox/models"
 )
 
-func TestAccAvaliablePrefixes_basic(t *testing.T) {
+func TestAccAvailablePrefixes_basic(t *testing.T) {
 	context := map[string]interface{}{
 		"random_prefix_length": randIntRange(t, 16, 30),
 		"random_suffix":        randString(t, 10),
@@ -41,7 +41,7 @@ func TestAccAvaliablePrefixes_basic(t *testing.T) {
 	})
 }
 
-func TestAccAvaliablePrefixes_basic1(t *testing.T) {
+func TestAccAvailablePrefixes_basic1(t *testing.T) {
 	context := map[string]interface{}{
 		"random_prefix_length": randIntRange(t, 16, 30),
 		"random_suffix":        randString(t, 10),
@@ -66,11 +66,11 @@ func TestAccAvaliablePrefixes_basic1(t *testing.T) {
 	})
 }
 
-func TestAccAvaliablePrefixes_basic2(t *testing.T) {
+func TestAccAvailablePrefixes_basic2(t *testing.T) {
 	context := map[string]interface{}{
 		"random_prefix_length": randIntRange(t, 16, 30),
 		"random_suffix":        randString(t, 10),
-		"parent_prefix_id":     testNetboxParentPrefixId,
+		"parent_prefix_id":     testNetboxParentPrefixIdWithVrf,
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -91,7 +91,7 @@ func TestAccAvaliablePrefixes_basic2(t *testing.T) {
 	})
 }
 
-func TestAccAvaliablePrefixes_EmptyCustomFields(t *testing.T) {
+func TestAccAvailablePrefixes_EmptyCustomFields(t *testing.T) {
 	context := map[string]interface{}{
 		"random_prefix_length": randIntRange(t, 16, 30),
 		"random_suffix":        randString(t, 10),
@@ -114,6 +114,106 @@ func TestAccAvaliablePrefixes_EmptyCustomFields(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccAvailablePrefixesMultipleSteps(t *testing.T) {
+	context := map[string]interface{}{
+		"random_prefix_length": randIntRange(t, 16, 30),
+		"random_suffix":        randString(t, 10),
+		"parent_prefix_id":     testNetboxParentPrefixIdWithVrf,
+	}
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAvailablePrefixWithParentPrefixIdMultipleStep1(context),
+			},
+			{
+				Config: testAccAvailablePrefixWithParentPrefixIdMultipleStep2(context),
+			},
+			{
+				Config: testAccAvailablePrefixWithParentPrefixIdMultipleStep3(context),
+			},
+			{
+				ResourceName:            "netbox_available_prefixes.bar",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"parent_prefix_id"},
+			},
+		},
+	})
+}
+
+func testAccAvailablePrefixWithParentPrefixIdMultipleStep1(context map[string]interface{}) string {
+	return Nprintf(`
+resource "netbox_available_prefixes" "bar" {
+	parent_prefix_id = %{parent_prefix_id}
+	prefix_length = %{random_prefix_length}
+  	is_pool          = true
+  	status           = "active"
+
+  	role = "gcp"
+  	site = "se1"
+  	vlan = "gcp"
+  	vrf  = "activision"
+  	tenant = "cloud"
+	tags = ["AvailablePrefix-acc%{random_suffix}-01", "AvailablePrefix-acc%{random_suffix}-02", "AvailablePrefix-acc%{random_suffix}-03"]
+
+	custom_fields {
+		helpers      = "cf-acc%{random_suffix}-01"
+		ipv4_acl_in  = "cf-acc%{random_suffix}-02"
+		ipv4_acl_out = "cf-acc%{random_suffix}-03"
+	}
+}`, context)
+}
+
+func testAccAvailablePrefixWithParentPrefixIdMultipleStep2(context map[string]interface{}) string {
+	return Nprintf(`
+resource "netbox_available_prefixes" "bar" {
+	parent_prefix_id = %{parent_prefix_id}
+	prefix_length = %{random_prefix_length}
+  	is_pool          = true
+  	status           = "reserved"
+
+  	role = "gcp"
+  	site = "se1"
+  	vlan = "gcp"
+  	vrf  = "activision"
+  	tenant = "cloud"
+	tags = ["AvailablePrefix-acc%{random_suffix}-03", "AvailablePrefix-acc%{random_suffix}-04", "AvailablePrefix-acc%{random_suffix}-05"]
+
+	custom_fields {
+		helpers      = "cf-acc%{random_suffix}-01"
+		ipv4_acl_in  = "cf-acc%{random_suffix}-02"
+		ipv4_acl_out = "cf-acc%{random_suffix}-03"
+	}
+}`, context)
+}
+
+func testAccAvailablePrefixWithParentPrefixIdMultipleStep3(context map[string]interface{}) string {
+	return Nprintf(`
+resource "netbox_available_prefixes" "bar" {
+	parent_prefix_id = %{parent_prefix_id}
+	prefix_length = %{random_prefix_length}
+  	is_pool          = false
+  	status           = "active"
+
+  	role = "gcp"
+  	site = "se1"
+  	vlan = "gcp"
+  	vrf  = "activision"
+  	tenant = "cloud"
+	tags = ["AvailablePrefix-acc%{random_suffix}-06", "AvailablePrefix-acc%{random_suffix}-07", "AvailablePrefix-acc%{random_suffix}-08"]
+
+	custom_fields {
+		helpers      = "cf-acc%{random_suffix}-01"
+		ipv4_acl_in  = "cf-acc%{random_suffix}-02"
+		ipv4_acl_out = "cf-acc%{random_suffix}-03"
+	}
+}`, context)
 }
 
 func testAccAvailablePrefixWithParentPrefixIdExample1(context map[string]interface{}) string {
