@@ -180,7 +180,7 @@ resource "netbox_available_prefixes" "custom_fields" {
 func testAccAvailablePrefixWithParentPrefixIdExample(context map[string]interface{}) string {
 	return Nprintf(`
 resource "netbox_available_prefixes" "gke-test" {
-	parent_prefix_id = 502
+	parent_prefix_id = 1
 	prefix_length = %{random_prefix_length}
   	is_pool          = true
   	status           = "active"
@@ -189,6 +189,7 @@ resource "netbox_available_prefixes" "gke-test" {
 	custom_fields {}
 }`, context)
 }
+
 func testAccCheckAvailablePrefixesDestroyProducer(t *testing.T) func(s *terraform.State) error {
 	return func(s *terraform.State) error {
 		for name, rs := range s.RootModule().Resources {
