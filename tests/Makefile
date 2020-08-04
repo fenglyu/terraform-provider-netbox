@@ -6,7 +6,7 @@ hadolint_available := $(shell hadolint --help > /dev/null 2>&1; echo $$?)
 hadolint_command := hadolint --ignore DL3003 --ignore DL3008 --ignore DL3013 --ignore DL3018 --ignore DL3028 --ignore DL4000 --ignore DL4001
 hadolint_container := hadolint/hadolint:latest
 
-VERSION ?= latest
+VERSION ?= 2.4.7
 IS_LATEST := false
 dockerfile := Dockerfile
 
