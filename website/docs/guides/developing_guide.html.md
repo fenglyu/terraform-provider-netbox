@@ -24,6 +24,7 @@ export NETBOX_PARENT_PREFIX_WITH_VRF_ID=16
 ## Environment Variables Reference
 
 The following variables are required:
+
 + `NETBOX_TOKEN`       - (Required) The Api token created in netbox user profile.
 + `NETBOX_HOST`        - (Required) The host address of netbox service. Default "localhost:8000".
 + `NETBOX_BASE_PATH`   - (Optional) The base path of netbox api entry point, by default "/api".
