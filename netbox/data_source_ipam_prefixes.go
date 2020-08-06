@@ -32,6 +32,11 @@ func dataSourceIpamAvailablePrefixes() *schema.Resource {
 				Optional:    true,
 				Description: "Prefix family",
 			},
+			"id": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Search for a prefix by ID",
+			},
 			"id_in": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -162,6 +167,11 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 	if v, ok := d.GetOk("family"); ok {
 		family := v.(string)
 		param.SetFamily(&family)
+	}
+
+	if v, ok := d.GetOk("id"); ok {
+		id := v.(string)
+		param.SetIDIn(&id)
 	}
 
 	if v, ok := d.GetOk("id_in"); ok {
@@ -326,7 +336,12 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 		return fmt.Errorf("Error retrieving prefixes: %s", err)
 	}
 
-	d.SetId(d.Get("name").(string))
+	if v, ok := d.GetOk("id"); ok {
+		id := v.(string)
+		d.SetId(id)
+	} else {
+		d.SetId(d.Get("name").(string))
+	}
 
 	return nil
 }
