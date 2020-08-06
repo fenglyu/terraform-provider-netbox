@@ -42,6 +42,11 @@ func dataSourceIpamAvailablePrefixes() *schema.Resource {
 				Optional:    true,
 				Description: "Prefix is a pool",
 			},
+			"mask_length": {
+				Type:        schema.TypeFloat,
+				Optional:    true,
+				Description: "Max Length of Prefix",
+			},
 			"limit": {
 				Type:        schema.TypeInt,
 				Optional:    true,
@@ -51,6 +56,11 @@ func dataSourceIpamAvailablePrefixes() *schema.Resource {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				Description: "The initial index from which to return the results.",
+			},
+			"prefix": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Full Prefix CIDR to find",
 			},
 			"q": {
 				Type:        schema.TypeString,
@@ -169,9 +179,28 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 		param.SetLimit(&limit)
 	}
 
+	if v, ok := d.GetOk("mask_length"); ok {
+		maskLength := v.(float64)
+		param.SetMaskLength(&maskLength)
+	}
+
 	if v, ok := d.GetOk("offset"); ok {
 		offset := v.(int64)
 		param.SetOffset(&offset)
+	}
+
+	if v, ok := d.GetOk("prefix"); ok {
+		prefix := v.(string)
+
+		prefixLength, err := strconv.Atoi(strings.Split(prefix, "/")[1])
+		if err != nil {
+			return fmt.Errorf("Error parsing prefix parameter %v", err)
+		}
+
+		maskLength := float64(prefixLength)
+
+		param.SetWithinInclude(&prefix)
+		param.SetMaskLength(&maskLength)
 	}
 
 	if v, ok := d.GetOk("q"); ok {
@@ -266,7 +295,6 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 		data["created"] = prefix.Created.String()
 		data["family"] = prefix.Family
 		data["last_updated"] = prefix.LastUpdated.String()
-
 		data["prefix"] = prefix.Prefix
 		data["status"] = prefixStatusIDMapReverse[*prefix.Status.Value]
 		data["tags"] = prefix.Tags
