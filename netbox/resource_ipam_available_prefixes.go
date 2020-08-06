@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
 	"log"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
@@ -56,14 +57,14 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 				ForceNew:     true,
 				AtLeastOneOf: availablePrefixesKeys,
 				ValidateFunc: validation.IsCIDRNetwork(8, 128),
-				Description:  "crave available prefixes under the parent_prefix",
+				Description:  "carve available prefixes under the parent_prefix",
 			},
 			"prefix": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				Computed:     true,
 				ValidateFunc: validation.IsCIDRNetwork(8, 128),
-				Description:  "craved available prefix",
+				Description:  "carve available prefix",
 			},
 			"parent_prefix_id": {
 				Type:         schema.TypeInt,
