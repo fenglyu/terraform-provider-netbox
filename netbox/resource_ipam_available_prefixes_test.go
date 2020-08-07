@@ -3,11 +3,12 @@ package netbox
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/go-multierror"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 
@@ -266,10 +267,15 @@ func sendRequestforPrefix(config *Config, rs *terraform.ResourceState) ([]*model
 	idStr := rs.Primary.Attributes["id"]
 	idList := make([]string, 0)
 	// datasource
-	if strings.Contains(idStr, "/") {
-		names := strings.Split(idStr, "/")
-		idStrList := names[1]
-		idList = strings.Split(idStrList, "_")
+	re := regexp.MustCompile(`[a-zA-Z-_]+`)
+	if re.MatchString(idStr) {
+		prefixesLen, _ := strconv.Atoi(rs.Primary.Attributes["prefixes.#"])
+		i := 0
+		for i < prefixesLen {
+			id := rs.Primary.Attributes[fmt.Sprintf("refixes.%d.id", i)]
+			idList = append(idList, id)
+			i++
+		}
 	} else {
 		idList = append(idList, idStr)
 	}

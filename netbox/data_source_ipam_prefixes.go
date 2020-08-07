@@ -357,9 +357,7 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 		id := v.(string)
 		d.SetId(id)
 	} else {
-		//d.SetId(d.Get("name").(string))
-		// For multiple reseults, Name in the form of "{name}/id0_id1_id2"
-		d.SetId(fmt.Sprintf("%s/%s", d.Get("name").(string), strings.Join(prefixIdList, "_")))
+		d.SetId(d.Get("name").(string))
 	}
 
 	return nil
