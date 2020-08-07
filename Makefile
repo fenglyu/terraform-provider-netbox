@@ -4,9 +4,10 @@ PKG_NAME=netbox
 DIR_NAME=netbox
 XC_ARCH=amd64
 XC_OS=linux darwin windows
+PLATFORM := $(shell uname | tr '[:upper:]' '[:lower:]')
 GIT_COMMIT=$$(git rev-parse HEAD)
 RELEASE_VERSION=$$(git for-each-ref refs/tags --sort=-taggerdate --format='%(refname:short)' --count=1)
-version ?= v0.1.0
+version ?= 0.1.0
 LD_FLAGS=-s -w
 #TESTARGS=-v
 
@@ -23,7 +24,11 @@ gox:
 
 build-dev: fmtcheck generate
 	@[ -z "${version}" ] || ( echo "==> please use 'make build-dev version=vX.Y.Z'" )
-	go build  -ldflags="-X main.GitCommit=${GIT_COMMIT}" -o ~/.terraform.d/plugins/terraform-provider-$(PKG_NAME)_${version} .
+	go build  -ldflags="-X main.GitCommit=${GIT_COMMIT}" -o ~/.terraform.d/plugins/terraform-provider-$(PKG_NAME)_v${version} .
+
+build-dev13: fmtcheck generate
+	@[ -z "${version}" ] || ( echo "==> please use 'make build-dev version=vX.Y.Z'" )
+	go build  -ldflags="-X main.GitCommit=${GIT_COMMIT}" -o ~/.terraform.d/plugins/registry.terraform.io/-/netbox/${version}/${PLATFORM}_${XC_ARCH}/terraform-provider-$(PKG_NAME)_v${version} .
 
 build: fmtcheck generate prep gox
 	@echo "==> Building..."

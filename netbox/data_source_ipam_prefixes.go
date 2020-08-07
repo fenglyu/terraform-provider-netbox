@@ -12,6 +12,17 @@ import (
 )
 
 func dataSourceIpamAvailablePrefixes() *schema.Resource {
+
+	prefixSchema := datasourceSchemaFromResourceSchema(resourceIpamAvailablePrefixes().Schema)
+	// Add prefix id to prefix output
+
+	prefixSchema["id"] = &schema.Schema{
+		Type:        schema.TypeInt,
+		Computed:    true,
+		Optional:    true,
+		Description: "An identifier for the prefix",
+	}
+
 	// This is a schema Element that will allow us to read and place all returned prefixes into the
 	// `prefixes` attribute.
 	return &schema.Resource{
@@ -144,9 +155,10 @@ func dataSourceIpamAvailablePrefixes() *schema.Resource {
 			},
 			"prefixes": {
 				Type:     schema.TypeList,
+				Required: false,
 				Computed: true,
 				Elem: &schema.Resource{
-					Schema: datasourceSchemaFromResourceSchema(resourceIpamAvailablePrefixes().Schema),
+					Schema: prefixSchema,
 				},
 			},
 		},
@@ -297,6 +309,7 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 	// Container to store results
 	prefixes := make([]map[string]interface{}, 0)
 
+	prefixIdList := make([]string, 0)
 	for _, prefix := range ipamPrefixListBody.Payload.Results {
 		data := map[string]interface{}{}
 		data["description"] = prefix.Description
@@ -308,6 +321,7 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 		data["prefix"] = prefix.Prefix
 		data["status"] = prefixStatusIDMapReverse[*prefix.Status.Value]
 		data["tags"] = prefix.Tags
+		data["id"] = prefix.ID
 
 		if prefix.Site != nil {
 			data["site"] = prefix.Site.Name
@@ -325,11 +339,14 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 			data["vrf"] = prefix.Vrf.Name
 		}
 
-		pl := strings.Split(*prefix.Prefix, "/")[1]
-		prefixLength, _ := strconv.Atoi(pl)
-		data["prefix_length"] = prefixLength
+		pl, err := strconv.Atoi(strings.Split(*prefix.Prefix, "/")[1])
+		if err != nil {
+			return fmt.Errorf("Error parsing *prefix.Prefix parameter %v", err)
+		}
+		data["prefix_length"] = pl
 
 		prefixes = append(prefixes, data)
+		prefixIdList = append(prefixIdList, fmt.Sprintf("%d", prefix.ID))
 	}
 
 	if err := d.Set("prefixes", prefixes); err != nil {
@@ -340,7 +357,9 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 		id := v.(string)
 		d.SetId(id)
 	} else {
-		d.SetId(d.Get("name").(string))
+		//d.SetId(d.Get("name").(string))
+		// For multiple reseults, Name in the form of "{name}/id0_id1_id2"
+		d.SetId(fmt.Sprintf("%s/%s", d.Get("name").(string), strings.Join(prefixIdList, "_")))
 	}
 
 	return nil

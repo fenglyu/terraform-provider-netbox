@@ -19,6 +19,7 @@ func TestLoadAndValidate(t *testing.T) {
 	}
 }
 
+/*
 func TestApiAccessTestInHttp(t *testing.T) {
 	config := &Config{
 		ApiToken: getTestNetboxApiTokenFromEnv(t),
@@ -30,7 +31,7 @@ func TestApiAccessTestInHttp(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error %v", err)
 	}
-}
+}*/
 
 func TestApiAccessTestInHttps(t *testing.T) {
 	config := &Config{
