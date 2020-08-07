@@ -7,7 +7,7 @@ terraform {
     }
 
     netbox = {
-      source = "registry.terraform.io/-/netbox"
+      source  = "registry.terraform.io/-/netbox"
       version = "~> 0.1.2"
     }
   }
