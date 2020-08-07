@@ -90,7 +90,6 @@ func TestAccDataSourceAvailablePrefixesByPrefixId(t *testing.T) {
 	})
 }
 
-/*
 // Those two tests require terraform 0.13.0 to properly work, Skip them here
 func TestAccDataSourceAvailablePrefixesByTag(t *testing.T) {
 
@@ -146,7 +145,6 @@ func TestAccDataSourceAvailablePrefixesByTag(t *testing.T) {
 	})
 }
 
-
 func TestAccDataSourceAvailablePrefixesByRole(t *testing.T) {
 
 	context := map[string]interface{}{
@@ -186,7 +184,8 @@ func TestAccDataSourceAvailablePrefixesByRole(t *testing.T) {
 		},
 	})
 }
-*/
+
+/**/
 func testAccDataSourceAvailablePrefixesCheck(datasourceName string, resourceName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		ds, ok := s.RootModule().Resources[datasourceName]
