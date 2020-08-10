@@ -2,18 +2,20 @@ package netbox
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
-func TestAccDataSourceAvailablePrefixes_basic(t *testing.T) {
+func TestAccDataSourceAvailablePrefixesByPrefix(t *testing.T) {
 
 	context := map[string]interface{}{
 		"parent_prefix_id":     testNetboxParentPrefixIdWithVrf,
 		"random_prefix_length": randIntRange(t, 16, 30),
 	}
+	resourceName := "data.netbox_available_prefixes.bar"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -23,23 +25,155 @@ func TestAccDataSourceAvailablePrefixes_basic(t *testing.T) {
 			{
 				Config: testAccDataSourceAvailablePrefixesConfigByPrefix(context),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceAvailablePrefixesCheck("data.netbox_available_prefixes.bar", "netbox_available_prefixes.foo"),
-					resource.TestCheckResourceAttr("data.netbox_available_prefixes.bar", "is_pool", "true"),
-					resource.TestCheckResourceAttr("data.netbox_available_prefixes.bar", "status", "active"),
-					resource.TestCheckResourceAttr("data.netbox_available_prefixes.bar", "family", "4"),
-					resource.TestCheckResourceAttr("data.netbox_available_prefixes.bar", "description", "testAccDataSourceComputeInstanceConfig description"),
-					// Tags to be tested
-					//resource.TestCheckResourceAttr("data.netbox_available_prefixes.bar", "tags", "[\"datasource-AvailablePrefix-acc01\", \"datasource-AvailablePrefix-acc02\", \"datasource-AvailablePrefix-acc02\"]"),
+					resource.TestCheckResourceAttr(resourceName, "name", "prefix_lookup"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.#", "1"),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.created", regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.description", "testAccDataSourceComputeInstanceConfig description"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.family", "4"),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.id", regexp.MustCompile(`^\d+$`)),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.is_pool", "true"),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.last_updated", regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T[\d:.]+Z$`)),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.prefix", regexp.MustCompile(`^\d+\.\d+\.\d+\.\d+/\d+$`)),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.role", "gcp"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.site", "se1"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.status", "active"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.vlan", "gcp"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.vrf", "activision"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.tenant", "cloud"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.tags.#", "3"),
 				),
 			},
+		},
+	})
+}
+
+func TestAccDataSourceAvailablePrefixesByPrefixId(t *testing.T) {
+
+	context := map[string]interface{}{
+		"parent_prefix_id":     testNetboxParentPrefixIdWithVrf,
+		"random_prefix_length": randIntRange(t, 16, 30),
+	}
+	resourceName := "data.netbox_available_prefixes.bar"
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckDataSourceAvailablePrefixesDestroyProducer(t),
+		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceAvailablePrefixesConfigByPrefixId(context),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDataSourceAvailablePrefixesCheck("data.netbox_available_prefixes.bar", "netbox_available_prefixes.foo"),
-					resource.TestCheckResourceAttr("data.netbox_available_prefixes.bar", "is_pool", "true"),
-					resource.TestCheckResourceAttr("data.netbox_available_prefixes.bar", "status", "active"),
-					resource.TestCheckResourceAttr("data.netbox_available_prefixes.bar", "family", "4"),
-					resource.TestCheckResourceAttr("data.netbox_available_prefixes.bar", "description", "testAccDataSourceComputeInstanceConfig description"),
+					//	testAccDataSourceAvailablePrefixesCheck(resourceName, "netbox_available_prefixes.foo"),
+					resource.TestCheckResourceAttr(resourceName, "name", "prefix_lookup"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.#", "1"),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.created", regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.description", "testAccDataSourceComputeInstanceConfig description"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.family", "4"),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.id", regexp.MustCompile(`^\d+$`)),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.is_pool", "true"),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.last_updated", regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T[\d:.]+Z$`)),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.prefix", regexp.MustCompile(`^\d+\.\d+\.\d+\.\d+/\d+$`)),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.role", "gcp"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.site", "se1"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.status", "active"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.vlan", "gcp"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.vrf", "activision"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.tenant", "cloud"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.tags.#", "3"),
+				),
+			},
+		},
+	})
+}
+
+// Those two tests require terraform 0.13.0 to properly work, Skip them here
+func TestAccDataSourceAvailablePrefixesByTag(t *testing.T) {
+
+	context := map[string]interface{}{
+		"parent_prefix_id":     2,
+		"random_prefix_length": randIntRange(t, 16, 30),
+		"random_suffix":        randString(t, 10),
+	}
+	resourceName := "data.netbox_available_prefixes.tag"
+	//resourceRoleName := "data.netbox_available_prefixes.bar"
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckDataSourceAvailablePrefixesDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDataSourceAvailablePrefixesConfigByParameters(context),
+				Check: resource.ComposeTestCheckFunc(
+					//	testAccDataSourceAvailablePrefixesCheck(resourceName, "netbox_available_prefixes.foo"),
+					resource.TestCheckResourceAttr(resourceName, "name", "prefix_lookup_by_tag"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.#", "2"),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.created", regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.description", regexp.MustCompile(`^testAccDataSourceAvailablePrefixesConfigByParameters`)),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.family", "4"),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.id", regexp.MustCompile(`^\d+$`)),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.is_pool", "true"),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.last_updated", regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T[\d:.]+Z$`)),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.prefix", regexp.MustCompile(`^\d+\.\d+\.\d+\.\d+/\d+$`)),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.role", "gcp"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.site", "se1"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.status", "active"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.vlan", "gcp"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.vrf", "activision"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.tenant", "cloud"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.tags.#", "3"),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.1.created", regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.1.description", regexp.MustCompile(`^testAccDataSourceAvailablePrefixesConfigByParameters`)),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.1.family", "4"),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.1.id", regexp.MustCompile(`^\d+$`)),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.1.is_pool", "true"),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.1.last_updated", regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T[\d:.]+Z$`)),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.1.prefix", regexp.MustCompile(`^\d+\.\d+\.\d+\.\d+/\d+$`)),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.1.role", "gcp"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.1.site", "se1"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.1.status", "active"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.1.vlan", "gcp"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.1.vrf", "activision"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.1.tenant", "cloud"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.1.tags.#", "3"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDataSourceAvailablePrefixesByRole(t *testing.T) {
+
+	context := map[string]interface{}{
+		"parent_prefix_id":     testNetboxParentPrefixIdWithVrf,
+		"random_prefix_length": randIntRange(t, 16, 30),
+		"random_suffix":        randString(t, 10),
+	}
+	resourceName := "data.netbox_available_prefixes.role"
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckDataSourceAvailablePrefixesDestroyProducer(t),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDataSourceAvailablePrefixesConfigByParameters(context),
+				Check: resource.ComposeTestCheckFunc(
+					//	testAccDataSourceAvailablePrefixesCheck(resourceName, "netbox_available_prefixes.foo"),
+					resource.TestCheckResourceAttr(resourceName, "name", "prefix_lookup_by_role"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.#", "1"),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.created", regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.description", regexp.MustCompile(`^testAccDataSourceAvailablePrefixesConfigByParameters`)),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.family", "4"),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.id", regexp.MustCompile(`^\d+$`)),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.is_pool", "true"),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.last_updated", regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T[\d:.]+Z$`)),
+					resource.TestMatchResourceAttr(resourceName, "prefixes.0.prefix", regexp.MustCompile(`^\d+\.\d+\.\d+\.\d+/\d+$`)),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.role", "cloudera"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.site", "se1"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.status", "active"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.vlan", "gcp"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.vrf", "activision"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.tenant", "cloud"),
+					resource.TestCheckResourceAttr(resourceName, "prefixes.0.tags.#", "3"),
 				),
 			},
 		},
@@ -113,6 +247,7 @@ resource "netbox_available_prefixes" "foo" {
 }
 
 data "netbox_available_prefixes" "bar"{
+  name = "prefix_lookup"
   prefix = netbox_available_prefixes.foo.prefix
 }
 `, config)
@@ -137,7 +272,72 @@ resource "netbox_available_prefixes" "foo" {
 }
 
 data "netbox_available_prefixes" "bar"{
-  prefix_id = netbox_available_prefixes.foo.id
+  name = "prefix_lookup"
+  id = netbox_available_prefixes.foo.id
+}
+`, config)
+}
+
+func testAccDataSourceAvailablePrefixesConfigByParameters(config map[string]interface{}) string {
+	return Nprintf(`
+resource "netbox_available_prefixes" "foo" {
+  parent_prefix_id 	= %{parent_prefix_id}
+  prefix_length 	= %{random_prefix_length}
+  is_pool          	= true
+  status          	= "active"
+  role = "gcp"
+  site = "se1"
+  vlan = "gcp"
+  vrf  = "activision"
+  tenant = "cloud"
+
+  description = "testAccDataSourceAvailablePrefixesConfigByParameters ==> foo"
+  tags        = ["datasource-%{random_suffix}-accTag01", "datasource-AvailablePrefix-accTag02", "datasource-AvailablePrefix-accTag03"]
+  custom_fields  {}
+}
+
+resource "netbox_available_prefixes" "bar" {
+  parent_prefix_id 	= %{parent_prefix_id} 
+  prefix_length 	= %{random_prefix_length} - 1
+  is_pool          	= true
+  status          	= "active"
+  role = "gcp"
+  site = "se1"
+  vlan = "gcp"
+  vrf  = "activision"
+  tenant = "cloud"
+
+  description = "testAccDataSourceAvailablePrefixesConfigByParameters ==> bar"
+  tags        = ["datasource-%{random_suffix}-accTag01", "datasource-AvailablePrefix-accTag04", "datasource-AvailablePrefix-accTag05"]
+  custom_fields  {}
+}
+
+resource "netbox_available_prefixes" "neo" {
+  parent_prefix_id 	= %{parent_prefix_id}
+  prefix_length 	= %{random_prefix_length} + 1
+  is_pool          	= true
+  status          	= "active"
+  role = "cloudera"
+  site = "se1"
+  vlan = "gcp"
+  vrf  = "activision"
+  tenant = "cloud"
+
+  description = "testAccDataSourceAvailablePrefixesConfigByParameters ==> neo"
+  tags        = ["datasource-%{random_suffix}-accTag06", "datasource-AvailablePrefix-accTag07", "datasource-AvailablePrefix-accTag08"]
+  custom_fields  {}
+}
+
+data "netbox_available_prefixes" "tag"{
+  name = "prefix_lookup_by_tag"
+  tag = lower("datasource-%{random_suffix}-accTag01")
+  depends_on  = [netbox_available_prefixes.bar, netbox_available_prefixes.foo, netbox_available_prefixes.neo]
+}
+
+data "netbox_available_prefixes" "role"{
+  name = "prefix_lookup_by_role"
+  role =  lower("cloudera")
+  depends_on  = [netbox_available_prefixes.bar, netbox_available_prefixes.foo, netbox_available_prefixes.neo]
 }
 `, config)
 }

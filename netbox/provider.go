@@ -3,13 +3,12 @@ package netbox
 import (
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/mutexkv"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 // Global MutexKV
-var mutexKV = mutexkv.NewMutexKV()
+var mutexKV = NewMutexKV()
 
 func Provider() terraform.ResourceProvider {
 	provider := &schema.Provider{

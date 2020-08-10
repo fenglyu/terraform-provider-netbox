@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
 	"log"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 
@@ -192,7 +192,6 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 				suppressEmptyCustomFieldsDiff,
 			),
 		),
-		/**/
 	}
 }
 
@@ -212,7 +211,6 @@ func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) 
 	//only prefix_length and a parent_id is mandatory
 	//prerent_prefix here is prepared to fetch prrent_prefix_id only
 	//wPrefix.Prefix = &prefix
-
 	var prefixlength int64
 	if pl, ok := d.GetOk("prefix_length"); ok {
 		prefixlength = int64(pl.(int))

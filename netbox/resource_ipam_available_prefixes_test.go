@@ -3,6 +3,8 @@ package netbox
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/go-multierror"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -314,20 +316,44 @@ func testAccCheckAvailablePrefixesDestroyProducer(t *testing.T) func(s *terrafor
 	}
 }
 
-func sendRequestforPrefix(config *Config, rs *terraform.ResourceState) (*models.Prefix, error) {
-	id, err := strconv.Atoi(rs.Primary.Attributes["id"])
-	if err != nil {
-		return nil, err
+func sendRequestforPrefix(config *Config, rs *terraform.ResourceState) ([]*models.Prefix, error) {
+	idStr := rs.Primary.Attributes["id"]
+	idList := make([]string, 0)
+	// datasource
+	re := regexp.MustCompile(`[a-zA-Z-_]+`)
+	if re.MatchString(idStr) {
+		prefixesLen, _ := strconv.Atoi(rs.Primary.Attributes["prefixes.#"])
+		i := 0
+		for i < prefixesLen {
+			id := rs.Primary.Attributes[fmt.Sprintf("refixes.%d.id", i)]
+			idList = append(idList, id)
+			i++
+		}
+	} else {
+		idList = append(idList, idStr)
 	}
-	params := ipam.IpamPrefixesReadParams{
-		ID: int64(id),
-	}
-	params.WithContext(context.Background())
 
-	ipamPrefixesReadOK, err := config.client.Ipam.IpamPrefixesRead(&params, nil)
-	if err != nil || ipamPrefixesReadOK == nil {
-		return nil, fmt.Errorf("There is not prefix with ID %d", id)
+	prefixList := make([]*models.Prefix, 0)
+	var mulError *multierror.Error
+
+	for _, ids := range idList {
+		id, err := strconv.Atoi(ids)
+		if err != nil {
+			return nil, err
+		}
+		params := ipam.IpamPrefixesReadParams{
+			ID: int64(id),
+		}
+		params.WithContext(context.Background())
+
+		ipamPrefixesReadOK, err := config.client.Ipam.IpamPrefixesRead(&params, nil)
+		if err != nil {
+			mulError = multierror.Append(mulError, fmt.Errorf("Lookup Prefix ID %s", idStr))
+		}
+		if ipamPrefixesReadOK != nil && ipamPrefixesReadOK.Payload != nil {
+			prefixList = append(prefixList, ipamPrefixesReadOK.Payload)
+		}
 	}
 
-	return ipamPrefixesReadOK.Payload, nil
+	return prefixList, mulError
 }
