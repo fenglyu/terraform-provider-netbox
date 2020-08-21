@@ -2,12 +2,15 @@ TEST?=$$(go list ./...)
 WEBSITE_REPO=github.com/hashicorp/terraform-website
 PKG_NAME=netbox
 DIR_NAME=netbox
+PLATFORM=linux
 XC_ARCH=amd64
 XC_OS=linux darwin windows
 GIT_COMMIT=$$(git rev-parse HEAD)
 RELEASE_VERSION=$$(git for-each-ref refs/tags --sort=-taggerdate --format='%(refname:short)' --count=1)
+PKG := github.com/fenglyu/terraform-provider-netbox
 version ?= v0.1.2
-LD_FLAGS=-s -w
+LD_FLAGS=-X ${PKG}/version.ProviderVersion=${version} -X ${PKG}/version.GitCommit=${GIT_COMMIT}
+#LD_FLAGS=" -s -w "
 TESTARGS=-v
 
 
