@@ -34,7 +34,7 @@ build-dev13: fmtcheck generate
 
 build: fmtcheck generate prep gox
 	@echo "==> Building..."
-	@CGO_ENABLED=0 gox -os="$(XC_OS)" -arch="$(XC_ARCH)" -ldflags "$(LD_FLAGS)" -output "pkg/{{.OS}}_{{.Arch}}/terraform-provider-$(PKG_NAME)_${RELEASE_VERSION}" .
+	@CGO_ENABLED=0 gox -os="$(XC_OS)" -arch="$(XC_ARCH)" -ldflags "$(LD_FLAGS)" -output "pkg/{{.OS}}_{{.Arch}}/terraform-provider-$(PKG_NAME)_v${RELEASE_VERSION}" .
 
 release: build $(eval SHELL:=/bin/bash)
 	@for PLATFORM in $$(find ./pkg -mindepth 1 -maxdepth 1 -type d); do \
