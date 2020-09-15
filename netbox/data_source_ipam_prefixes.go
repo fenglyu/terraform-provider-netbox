@@ -316,7 +316,7 @@ func dataSourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) 
 		data["custom_fields"] = flatternDatasourceCF(d, prefix.CustomFields)
 		data["is_pool"] = prefix.IsPool
 		data["created"] = prefix.Created.String()
-		data["family"] = prefix.Family
+		data["family"] = prefix.Family.Value
 		data["last_updated"] = prefix.LastUpdated.String()
 		data["prefix"] = prefix.Prefix
 		data["status"] = *prefix.Status.Value
