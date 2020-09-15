@@ -8,7 +8,7 @@ XC_OS=linux darwin windows
 GIT_COMMIT=$$(git rev-parse HEAD)
 RELEASE_VERSION=$$(git for-each-ref refs/tags --sort=-taggerdate --format='%(refname:short)' --count=1)
 PKG := github.com/fenglyu/terraform-provider-netbox
-version ?= v0.1.2
+version ?= v0.1.5
 LD_FLAGS=-X ${PKG}/version.ProviderVersion=${version} -X ${PKG}/version.GitCommit=${GIT_COMMIT}
 #LD_FLAGS=" -s -w "
 TESTARGS=-v

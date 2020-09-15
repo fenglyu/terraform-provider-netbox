@@ -4,9 +4,11 @@ provider "netbox" {
 
 resource "netbox_available_prefixes" "gke-pods" {
 
-    parent_prefix_id = 502
-    prefix_length = 23
-    tags = ["BasePathTest-acc"]
+  parent_prefix_id = 249
+  prefix_length    = 23
+  tags             = ["BasePathTest-acc"]
+  site = "hgh3"
+  vlan = "HGH3A OS"
 
   /*
     custom_fields   {
@@ -15,8 +17,9 @@ resource "netbox_available_prefixes" "gke-pods" {
       ipv4_acl_in  = "ipv4_a343434cl_in"
       ipv4_acl_out = "ipv4_aefserwcl_out"
 
-  }*/
-    custom_fields{}
+  }
+*/
+  custom_fields {}
 }
 
 output "available_prefix" {
