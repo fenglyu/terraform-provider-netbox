@@ -12,9 +12,9 @@ version ?= 0.1.5
 LD_FLAGS=-X ${PKG}/version.ProviderVersion=${version} -X ${PKG}/version.GitCommit=${GIT_COMMIT}
 #LD_FLAGS=" -s -w "
 TESTARGS=-v
-TAG="v2.8.9-testing"
-#TEST_NETBOX_IMAGE ?= docker-hub.battle.net/cloud/netbox:${TAG-latest}
-TEST_NETBOX_IMAGE ?= netboxcommunity/netbox:${TAG-latest}
+TAG=v2.8.9-testing
+TEST_NETBOX_IMAGE ?= docker-hub.battle.net/cloud/netbox:${TAG}
+#TEST_NETBOX_IMAGE ?= netboxcommunity/netbox:${TAG}
 
 
 default: build
@@ -58,17 +58,19 @@ test: fmtcheck generate
 	go test $(TESTARGS) -timeout=30s $(TEST)
 
 test-netbox-env-up: $(eval SHELL:=/bin/bash)
-	NETBOX_IMAGE=$(TEST_NETBOX_IMAGE)
-	pushd tests/acc >/dev/null 2>&1; \
-	docker-compose up ; \
+	pushd tests/netbox-docker >/dev/null 2>&1; \
+	NETBOX_IMAGE="$(TEST_NETBOX_IMAGE)" docker-compose up -d ; \
 	popd >/dev/null 2>&1;
-
 
 test-netbox-env-down: $(eval SHELL:=/bin/bash)
-	NETBOX_IMAGE=$(TEST_NETBOX_IMAGE)
-	pushd tests/acc >/dev/null 2>&1; \
-	docker-compose down ; \
-	popd >/dev/null 2>&1;
+	pushd tests/netbox-docker >/dev/null 2>&1; \
+	NETBOX_IMAGE=$(TEST_NETBOX_IMAGE) docker-compose down; \
+	popd >/dev/null 2>&1; \
+	docker volume rm netbox-docker_netbox-static-files; \
+	docker volume rm netbox-docker_netbox-nginx-config; \
+	docker volume rm netbox-docker_netbox-media-files; \
+	docker volume rm netbox-docker_netbox-postgres-data; \
+	docker volume rm netbox-docker_netbox-redis-data
 
 
 testacc: fmtcheck
