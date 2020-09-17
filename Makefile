@@ -12,6 +12,9 @@ version ?= 0.1.5
 LD_FLAGS=-X ${PKG}/version.ProviderVersion=${version} -X ${PKG}/version.GitCommit=${GIT_COMMIT}
 #LD_FLAGS=" -s -w "
 TESTARGS=-v
+TAG="v2.8.9-testing"
+#TEST_NETBOX_IMAGE ?= docker-hub.battle.net/cloud/netbox:${TAG-latest}
+TEST_NETBOX_IMAGE ?= netboxcommunity/netbox:${TAG-latest}
 
 
 default: build
@@ -53,6 +56,20 @@ clean:
 
 test: fmtcheck generate
 	go test $(TESTARGS) -timeout=30s $(TEST)
+
+test-netbox-env-up: $(eval SHELL:=/bin/bash)
+	NETBOX_IMAGE=$(TEST_NETBOX_IMAGE)
+	pushd tests/acc >/dev/null 2>&1; \
+	docker-compose up ; \
+	popd >/dev/null 2>&1;
+
+
+test-netbox-env-down: $(eval SHELL:=/bin/bash)
+	NETBOX_IMAGE=$(TEST_NETBOX_IMAGE)
+	pushd tests/acc >/dev/null 2>&1; \
+	docker-compose down ; \
+	popd >/dev/null 2>&1;
+
 
 testacc: fmtcheck
 	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 go test $(TEST) $(TESTARGS) -timeout 240m -ldflags="-X=github.com/fenglyu/terraform-provider-netbox/version.ProviderVersion=acc"

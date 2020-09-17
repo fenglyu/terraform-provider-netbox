@@ -44,3 +44,10 @@ Superuser created successfully.
 ```
 
 admin:admin_netbox
+
+
+```
+docker inspect 871b34d6f052
+docker update --restart no registry
+docker stop registry
+```
