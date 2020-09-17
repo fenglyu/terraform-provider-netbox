@@ -227,7 +227,7 @@ func TestAccProviderBasePath_setBasePath(t *testing.T) {
 		"random_prefix_length": randIntRange(t, 16, 30),
 		"random_suffix":        randString(t, 10),
 		"basePath":             "/api",
-		"host":                 "netbox.k8s.me",
+		"host":                 "localhost:8080",
 		"parent_prefix_id":     testNetboxParentPrefixId,
 	}
 

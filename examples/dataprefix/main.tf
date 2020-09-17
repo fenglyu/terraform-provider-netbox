@@ -6,6 +6,7 @@ provider "netbox" {
 }
 
 data "netbox_available_prefixes" "foo"{
+  name = "dataprefix"
   prefix = "10.0.0.0/28"
 }
 
@@ -23,5 +24,5 @@ output "available_prefix_json" {
 }
 
 output "available_prefix_tags" {
-  value = join("_", data.netbox_available_prefixes.foo.tags)
+  value = element(data.netbox_available_prefixes.foo.prefixes, 0).tags
 }

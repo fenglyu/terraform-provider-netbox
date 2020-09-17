@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -56,6 +58,7 @@ func (c *Config) LoadAndValidate(ctx context.Context) error {
 	if c.BasePath == "" {
 		c.BasePath = NetboxDefaultBasePath
 	}
+
 	if c.Host == "" {
 		c.Host = NetboxDefaultHost
 	}
@@ -72,17 +75,18 @@ func (c *Config) LoadAndValidate(ctx context.Context) error {
 		}
 	}
 
-	schemes := []string{"https", "http"}
-	if err := ApiAccessTest(c.Host, c.BasePath, c.ApiToken, schemes, InsecureSkipVerify); err != nil {
+	host, schemes := getHost(c.Host)
+
+	if err := ApiAccessTest(host, c.BasePath, c.ApiToken, schemes, InsecureSkipVerify); err != nil {
 		return err
 	}
 	httpClient, err := runtimeclient.TLSClient(runtimeclient.TLSClientOptions{InsecureSkipVerify: InsecureSkipVerify})
 	if err != nil {
 		log.Fatal(err)
 	}
-	t := runtimeclient.NewWithClient(c.Host, c.BasePath, schemes, httpClient)
+	t := runtimeclient.NewWithClient(host, c.BasePath, schemes, httpClient)
 
-	log.Printf("[INFO] Instantiating http client for host %s and path %s", c.Host, c.BasePath)
+	log.Printf("[INFO] Instantiating http client for host %s and path %s", host, c.BasePath)
 	if c.ApiToken != "" {
 		t.DefaultAuthentication = runtimeclient.APIKeyAuth(AuthHeaderName, "header", fmt.Sprintf(AuthHeaderFormat, c.ApiToken))
 	}
@@ -90,6 +94,42 @@ func (c *Config) LoadAndValidate(ctx context.Context) error {
 	c.client = client.New(t, strfmt.Default)
 
 	return nil
+}
+
+func getHost(Host string) (string, []string) {
+	schemes := []string{} //, "http" "https"
+	host := ""
+	u, err := url.Parse(Host)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	reg := regexp.MustCompile(`^(?:https?://)(?:[\w]+)(?:\.?[\w]{2,})+:(?:[0-8]{2,5})$`)
+	if !reg.MatchString(Host) {
+		host = Host
+		if strings.HasPrefix(host, "localhost") || strings.HasPrefix(host, "127.0.0.1") {
+			schemes = append(schemes, "http")
+		} else {
+			schemes = append(schemes, "https")
+		}
+	} else {
+		switch {
+		case strings.EqualFold(u.Scheme, "https"):
+			schemes = append(schemes, "https")
+			host = fmt.Sprintf("%s:%s", u.Hostname(), u.Port())
+			break
+		case strings.EqualFold(u.Scheme, "http"):
+			schemes = append(schemes, "http")
+			host = fmt.Sprintf("%s:%s", u.Hostname(), u.Port())
+			break
+		default:
+			// use https by default
+			// when schema is empty, then host is c.Host
+			schemes = append(schemes, "https")
+			break
+		}
+	}
+	return host, schemes
 }
 
 func selectScheme(schemes []string) string {

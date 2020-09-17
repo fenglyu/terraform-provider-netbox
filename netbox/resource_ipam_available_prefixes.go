@@ -225,11 +225,14 @@ func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) 
 
 	var tenant int64
 	if tenantData, ok := d.GetOk("tenant"); ok {
-		if site.Tenant != nil && *site.Tenant.Name != tenantData.(string) {
-			return fmt.Errorf("Incompatible site %s and the tenant %s, expected tenant %s", *site.Name, tenantData.(string), *site.Tenant.Name)
+		if site != nil && site.Tenant != nil {
+			//return fmt.Errorf("Site %s or its tenant not exists", d.Get("site").(string))
+			if *site.Tenant.Name != tenantData.(string) {
+				return fmt.Errorf("Incompatible site %s and the tenant %s, expected tenant %s", *site.Name, tenantData.(string), *site.Tenant.Name)
+			}
+			tenant = site.Tenant.ID
+			wPrefix.Tenant = &tenant
 		}
-		tenant = site.Tenant.ID
-		wPrefix.Tenant = &tenant
 	}
 
 	var vrf *models.VRF

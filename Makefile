@@ -13,8 +13,8 @@ LD_FLAGS=-X ${PKG}/version.ProviderVersion=${version} -X ${PKG}/version.GitCommi
 #LD_FLAGS=" -s -w "
 TESTARGS=-v
 TAG=v2.8.9-testing
-TEST_NETBOX_IMAGE ?= docker-hub.battle.net/cloud/netbox:${TAG}
-#TEST_NETBOX_IMAGE ?= netboxcommunity/netbox:${TAG}
+#TEST_NETBOX_IMAGE ?= docker-hub.battle.net/cloud/netbox:${TAG}
+TEST_NETBOX_IMAGE ?= netboxcommunity/netbox:${TAG}
 
 
 default: build
