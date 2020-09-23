@@ -8,7 +8,7 @@ import (
 )
 
 // Global MutexKV
-var mutexKV = NewMutexKV()
+//var mutexKV = NewMutexKV()
 
 func Provider() terraform.ResourceProvider {
 	provider := &schema.Provider{
