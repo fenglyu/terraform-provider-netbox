@@ -2,6 +2,7 @@ package netbox
 
 import (
 	"fmt"
+	"log"
 	"regexp"
 	"testing"
 
@@ -85,11 +86,12 @@ func TestAccDataSourceAvailablePrefixesByPrefixId(t *testing.T) {
 	})
 }
 
+/*
 // Those two tests require terraform 0.13.0 to properly work, Skip them here
 func TestAccDataSourceAvailablePrefixesByTag(t *testing.T) {
 
 	context := map[string]interface{}{
-		"parent_prefix_id":     2,
+		"parent_prefix_id":     testNetboxParentPrefixIdWithVrf,
 		"random_prefix_length": randIntRange(t, 16, 30),
 		"random_suffix":        randString(t, 10),
 	}
@@ -139,7 +141,7 @@ func TestAccDataSourceAvailablePrefixesByTag(t *testing.T) {
 		},
 	})
 }
-
+*/
 func TestAccDataSourceAvailablePrefixesByRole(t *testing.T) {
 
 	context := map[string]interface{}{
@@ -147,6 +149,7 @@ func TestAccDataSourceAvailablePrefixesByRole(t *testing.T) {
 		"random_prefix_length": randIntRange(t, 16, 30),
 		"random_suffix":        randString(t, 10),
 	}
+
 	resourceName := "data.netbox_available_prefixes.role"
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -157,7 +160,7 @@ func TestAccDataSourceAvailablePrefixesByRole(t *testing.T) {
 			{
 				Config: testAccDataSourceAvailablePrefixesConfigByParameters(context),
 				Check: resource.ComposeTestCheckFunc(
-					//	testAccDataSourceAvailablePrefixesCheck(resourceName, "netbox_available_prefixes.foo"),
+					//testAccDataSourceAvailablePrefixesCheck(resourceName, "netbox_available_prefixes.neo"),
 					resource.TestCheckResourceAttr(resourceName, "name", "prefix_lookup_by_role"),
 					resource.TestCheckResourceAttr(resourceName, "prefixes.#", "1"),
 					resource.TestMatchResourceAttr(resourceName, "prefixes.0.created", regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)),
@@ -185,6 +188,8 @@ func testAccDataSourceAvailablePrefixesCheck(datasourceName string, resourceName
 		ds, ok := s.RootModule().Resources[datasourceName]
 		if !ok {
 			return fmt.Errorf("root module has no resource called %s", datasourceName)
+		} else {
+			log.Println(ds)
 		}
 
 		rs, ok := s.RootModule().Resources[resourceName]

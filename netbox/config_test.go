@@ -27,7 +27,7 @@ func TestApiAccessTestInHttp(t *testing.T) {
 	}
 	host, schemes := getHost(config.Host)
 	if schemes[0] != "http" {
-		t.Skipf("scheme http supported only %s", schemes[0])
+		t.Skipf("scheme http not supported, only %s", schemes[0])
 	}
 	err := ApiAccessTest(host, config.BasePath, config.ApiToken, []string{"http"}, true)
 	if err != nil {
@@ -44,7 +44,7 @@ func TestApiAccessTestInHttps(t *testing.T) {
 
 	host, schemes := getHost(config.Host)
 	if schemes[0] != "https" {
-		t.Skipf("scheme https supported only %s", schemes[0])
+		t.Skipf("scheme https not supported, only %s", schemes[0])
 	}
 	err := ApiAccessTest(host, config.BasePath, config.ApiToken, []string{"https"}, true)
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/go-multierror"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -318,14 +319,18 @@ func testAccCheckAvailablePrefixesDestroyProducer(t *testing.T) func(s *terrafor
 
 func sendRequestforPrefix(config *Config, rs *terraform.ResourceState) ([]*models.Prefix, error) {
 	idStr := rs.Primary.Attributes["id"]
+
 	idList := make([]string, 0)
 	// datasource
 	re := regexp.MustCompile(`[a-zA-Z-_]+`)
 	if re.MatchString(idStr) {
-		prefixesLen, _ := strconv.Atoi(rs.Primary.Attributes["prefixes.#"])
+		prefixesLen, err := strconv.Atoi(rs.Primary.Attributes["prefixes.#"])
+		if err != nil {
+			return nil, err
+		}
 		i := 0
 		for i < prefixesLen {
-			id := rs.Primary.Attributes[fmt.Sprintf("refixes.%d.id", i)]
+			id := rs.Primary.Attributes[fmt.Sprintf("prefixes.%d.id", i)]
 			idList = append(idList, id)
 			i++
 		}
@@ -339,6 +344,7 @@ func sendRequestforPrefix(config *Config, rs *terraform.ResourceState) ([]*model
 	for _, ids := range idList {
 		id, err := strconv.Atoi(ids)
 		if err != nil {
+			log.Println("err ==> ", ids)
 			return nil, err
 		}
 		params := ipam.IpamPrefixesReadParams{

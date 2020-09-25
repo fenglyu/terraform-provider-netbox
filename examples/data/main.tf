@@ -7,8 +7,9 @@ resource "netbox_available_prefixes" "gke-pods" {
   #parent_prefix = "10.0.4.0/24"
   # bear in mind, if vrf is specified, the parent_prefix_id should belong to the vrf,
   # otherwise, it wont' set the available prefix's vrf to "global"(by default).
+  count = 8
   parent_prefix_id = 1
-  prefix_length    = 20
+  prefix_length    = 9
   is_pool          = true
   status           = "active"
   site = "se1"
@@ -24,7 +25,7 @@ resource "netbox_available_prefixes" "gke-pods" {
 
 data "netbox_available_prefixes" "foo"{
   name = "querybyId"
-  id = netbox_available_prefixes.gke-pods.id
+  id = netbox_available_prefixes.gke-pods[0].id
   //prefix = "10.0.0.0/28"
 }
 
