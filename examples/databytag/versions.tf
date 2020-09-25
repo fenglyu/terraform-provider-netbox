@@ -8,7 +8,7 @@ terraform {
 
     netbox = {
       source  = "registry.terraform.io/-/netbox"
-      version = "~> 0.1.5"
+      version = "~> 0.1.8"
     }
   }
 }

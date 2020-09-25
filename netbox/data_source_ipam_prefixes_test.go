@@ -26,6 +26,7 @@ func TestAccDataSourceAvailablePrefixesByPrefix(t *testing.T) {
 			{
 				Config: testAccDataSourceAvailablePrefixesConfigByPrefix(context),
 				Check: resource.ComposeTestCheckFunc(
+					testAccDataSourceAvailablePrefixesCheck(resourceName, "netbox_available_prefixes.foo"),
 					resource.TestCheckResourceAttr(resourceName, "name", "prefix_lookup"),
 					resource.TestCheckResourceAttr(resourceName, "prefixes.#", "1"),
 					resource.TestMatchResourceAttr(resourceName, "prefixes.0.created", regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)),
@@ -63,7 +64,7 @@ func TestAccDataSourceAvailablePrefixesByPrefixId(t *testing.T) {
 			{
 				Config: testAccDataSourceAvailablePrefixesConfigByPrefixId(context),
 				Check: resource.ComposeTestCheckFunc(
-					//	testAccDataSourceAvailablePrefixesCheck(resourceName, "netbox_available_prefixes.foo"),
+					testAccDataSourceAvailablePrefixesCheck(resourceName, "netbox_available_prefixes.foo"),
 					resource.TestCheckResourceAttr(resourceName, "name", "prefix_lookup"),
 					resource.TestCheckResourceAttr(resourceName, "prefixes.#", "1"),
 					resource.TestMatchResourceAttr(resourceName, "prefixes.0.created", regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)),
@@ -141,7 +142,7 @@ func TestAccDataSourceAvailablePrefixesByTag(t *testing.T) {
 		},
 	})
 }
-*/
+
 func TestAccDataSourceAvailablePrefixesByRole(t *testing.T) {
 
 	context := map[string]interface{}{
@@ -182,6 +183,7 @@ func TestAccDataSourceAvailablePrefixesByRole(t *testing.T) {
 		},
 	})
 }
+*/
 
 func testAccDataSourceAvailablePrefixesCheck(datasourceName string, resourceName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
@@ -219,7 +221,7 @@ func testAccDataSourceAvailablePrefixesCheck(datasourceName string, resourceName
 		}
 
 		for _, attrToCheck := range instanceAttrsToTest {
-			if datasourceAttributes[attrToCheck] != resourceAttributes[attrToCheck] {
+			if datasourceAttributes[fmt.Sprintf("prefixes.0.%s", attrToCheck)] != resourceAttributes[attrToCheck] {
 				return fmt.Errorf(
 					"%s is %s; want %s",
 					attrToCheck,
