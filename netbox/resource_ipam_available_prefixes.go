@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"log"
 	"strconv"
 	"strings"
@@ -30,10 +31,10 @@ var (
 
 func resourceIpamAvailablePrefixes() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceIpamAvailablePrefixesCreate,
-		Read:   resourceIpamAvailablePrefixesRead,
-		Update: resourceIpamAvailablePrefixesUpdate,
-		Delete: resourceIpamAvailablePrefixesDelete,
+		CreateContext: resourceIpamAvailablePrefixesCreate,
+		ReadContext:   resourceIpamAvailablePrefixesRead,
+		UpdateContext: resourceIpamAvailablePrefixesUpdate,
+		DeleteContext: resourceIpamAvailablePrefixesDelete,
 
 		Importer: &schema.ResourceImporter{
 			//State: resourceIpamAvailablePrefixesImportState,
@@ -41,7 +42,7 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 		},
 		SchemaVersion: 1,
 		// TODO after test coverage finished
-		//MigrateState:
+		// StateUpgraders:
 		Timeouts: &schema.ResourceTimeout{
 			Create:  schema.DefaultTimeout(10 * time.Minute),
 			Update:  schema.DefaultTimeout(10 * time.Minute),
@@ -56,6 +57,7 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 				ForceNew:     true,
 				AtLeastOneOf: availablePrefixesKeys,
 				ValidateFunc: validation.IsCIDRNetwork(8, 128),
+				ValidateDiagFunc:
 				Description:  "crave available prefixes under the parent_prefix",
 			},
 			"prefix": {
@@ -195,7 +197,7 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 	}
 }
 
-func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) error {
+func resourceIpamAvailablePrefixesCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(*Config)
 
 	wPrefix := models.WritablePrefix{}
@@ -323,10 +325,10 @@ func resourceIpamAvailablePrefixesCreate(d *schema.ResourceData, m interface{}) 
 
 	d.SetId(fmt.Sprintf("%d", availablePrefix.ID))
 
-	return resourceIpamAvailablePrefixesRead(d, m)
+	return resourceIpamAvailablePrefixesRead(ctx, d, m)
 }
 
-func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) error {
+func resourceIpamAvailablePrefixesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(*Config)
 
 	log.Println("d state", d.State())
@@ -393,7 +395,7 @@ func resourceIpamAvailablePrefixesRead(d *schema.ResourceData, m interface{}) er
 	return nil
 }
 
-func resourceIpamAvailablePrefixesUpdate(d *schema.ResourceData, m interface{}) error {
+func resourceIpamAvailablePrefixesUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(*Config)
 
 	var writablePrefix models.WritablePrefix
@@ -491,10 +493,10 @@ func resourceIpamAvailablePrefixesUpdate(d *schema.ResourceData, m interface{}) 
 		return fmt.Errorf("%v %v", res, uerr)
 	}
 
-	return resourceIpamAvailablePrefixesRead(d, m)
+	return resourceIpamAvailablePrefixesRead(ctx, d, m)
 }
 
-func resourceIpamAvailablePrefixesDelete(d *schema.ResourceData, m interface{}) error {
+func resourceIpamAvailablePrefixesDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(*Config)
 
 	log.Printf("[INFO]Requesting Prefix deletion: %s", d.Get("prefix").(string))

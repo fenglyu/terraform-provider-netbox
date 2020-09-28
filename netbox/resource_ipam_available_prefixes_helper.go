@@ -3,7 +3,11 @@ package netbox
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"log"
+	"net"
 	"sort"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -207,4 +211,49 @@ func flatternDatasourceCF(d *schema.ResourceData, v interface{}) []map[string]in
 		return nil
 	}
 	return []map[string]interface{}{cf}
+}
+
+// Validation
+func IsCIDRNetworkDiagFunc(min, max int) schema.SchemaValidateDiagFunc {
+	return func(i interface{}, path cty.Path) (diags diag.Diagnostics) {
+		v, ok := i.(string)
+		if !ok {
+			diags = append(diags, diag.Diagnostic{
+				Severity:      diag.Error,
+				Summary:       fmt.Sprintf("expected type of %s to be string", k),
+				AttributePath: path,
+			})
+			return diags
+		}
+
+		_, ipnet, err := net.ParseCIDR(v)
+		if err != nil {
+			diags = append(diags, diag.Diagnostic{
+				Severity:      diag.Error,
+				Summary:       fmt.Sprintf("expected %s to contain a valid Value, got: %s with err: %s", k, v, err)),
+				AttributePath: path,
+			})
+			return diags
+		}
+
+		if ipnet == nil || v != ipnet.String() {
+			diags = append(diags, diag.Diagnostic{
+				Severity:      diag.Error,
+				Summary:       fmt.Sprintf("expected %s to contain a valid network Value, expected %s, got %s",
+					k, ipnet, v),
+				AttributePath: path,
+			})
+		}
+
+		sigbits, _ := ipnet.Mask.Size()
+		if sigbits < min || sigbits > max {
+			diags = append(diags, diag.Diagnostic{
+				Severity:      diag.Error,
+				Summary:       fmt.Sprintf("expected %q to contain a network Value with between %d and %d significant bits, got: %d", k, min, max, sigbits),
+				AttributePath: path,
+			})
+		}
+
+		return diags
+	}
 }
