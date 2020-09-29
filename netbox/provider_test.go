@@ -12,12 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fenglyu/go-netbox/netbox/client/ipam"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
-	"github.com/terraform-providers/terraform-provider-random/random"
-
-	"github.com/fenglyu/go-netbox/netbox/client/ipam"
 )
 
 var netboxApiTokenEnvVars = []string{
@@ -119,7 +116,7 @@ func randString(t *testing.T, length int) string {
 }
 
 var (
-	testAccProviders      map[string]terraform.ResourceProvider
+	testAccProviders      map[string]*schema.Provider
 	testAccProvider       *schema.Provider
 	testAccRandomProvider *schema.Provider
 
@@ -129,19 +126,17 @@ var (
 )
 
 func init() {
-	testAccProvider = Provider().(*schema.Provider)
-	testAccRandomProvider = random.Provider().(*schema.Provider)
+	testAccProvider = Provider()
 
-	testAccProviders = map[string]terraform.ResourceProvider{
+	testAccProviders = map[string]*schema.Provider{
 		"netbox": testAccProvider,
-		"random": testAccRandomProvider,
 	}
 	// check the existance of two test parent prefix id
 	checkPrefixId()
 }
 
 func TestProvider(t *testing.T) {
-	if err := Provider().(*schema.Provider).InternalValidate(); err != nil {
+	if err := Provider().InternalValidate(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 }
@@ -232,8 +227,9 @@ func TestAccProviderBasePath_setBasePath(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+
 		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{

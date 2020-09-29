@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"log"
 	"net"
 	"sort"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
@@ -213,14 +213,14 @@ func flatternDatasourceCF(d *schema.ResourceData, v interface{}) []map[string]in
 	return []map[string]interface{}{cf}
 }
 
-// Validation
+// Same as schema.IsCIDRNetwork
 func IsCIDRNetworkDiagFunc(min, max int) schema.SchemaValidateDiagFunc {
 	return func(i interface{}, path cty.Path) (diags diag.Diagnostics) {
 		v, ok := i.(string)
 		if !ok {
 			diags = append(diags, diag.Diagnostic{
 				Severity:      diag.Error,
-				Summary:       fmt.Sprintf("expected type of %s to be string", k),
+				Summary:       fmt.Sprintf("expected type of %v to be string", path),
 				AttributePath: path,
 			})
 			return diags
@@ -230,7 +230,7 @@ func IsCIDRNetworkDiagFunc(min, max int) schema.SchemaValidateDiagFunc {
 		if err != nil {
 			diags = append(diags, diag.Diagnostic{
 				Severity:      diag.Error,
-				Summary:       fmt.Sprintf("expected %s to contain a valid Value, got: %s with err: %s", k, v, err)),
+				Summary:       fmt.Sprintf("expected %v to contain a valid Value, got: %s with err: %s", path, v, err),
 				AttributePath: path,
 			})
 			return diags
@@ -238,9 +238,9 @@ func IsCIDRNetworkDiagFunc(min, max int) schema.SchemaValidateDiagFunc {
 
 		if ipnet == nil || v != ipnet.String() {
 			diags = append(diags, diag.Diagnostic{
-				Severity:      diag.Error,
-				Summary:       fmt.Sprintf("expected %s to contain a valid network Value, expected %s, got %s",
-					k, ipnet, v),
+				Severity: diag.Error,
+				Summary: fmt.Sprintf("expected %v to contain a valid network Value, expected %s, got %s",
+					path, ipnet, v),
 				AttributePath: path,
 			})
 		}
@@ -249,7 +249,109 @@ func IsCIDRNetworkDiagFunc(min, max int) schema.SchemaValidateDiagFunc {
 		if sigbits < min || sigbits > max {
 			diags = append(diags, diag.Diagnostic{
 				Severity:      diag.Error,
-				Summary:       fmt.Sprintf("expected %q to contain a network Value with between %d and %d significant bits, got: %d", k, min, max, sigbits),
+				Summary:       fmt.Sprintf("expected %v to contain a network Value with between %d and %d significant bits, got: %d", path, min, max, sigbits),
+				AttributePath: path,
+			})
+		}
+
+		return diags
+	}
+}
+
+func IntAtLeastDiagFunc(min int) schema.SchemaValidateDiagFunc {
+	return func(i interface{}, path cty.Path) (diags diag.Diagnostics) {
+		v, ok := i.(int)
+		if !ok {
+			diags = append(diags, diag.Diagnostic{
+				Severity:      diag.Error,
+				Summary:       fmt.Sprintf("expected type of %v to be integer", path),
+				AttributePath: path,
+			})
+			return diags
+		}
+		if v < min {
+			diags = append(diags, diag.Diagnostic{
+				Severity:      diag.Error,
+				Summary:       fmt.Sprintf("expected %v to be at least (%d), got %d", path, min, v),
+				AttributePath: path,
+			})
+			return diags
+		}
+
+		return diags
+	}
+}
+
+func IntBetweenDiagFunc(min, max int) schema.SchemaValidateDiagFunc {
+	return func(i interface{}, path cty.Path) (diags diag.Diagnostics) {
+		v, ok := i.(int)
+		if !ok {
+			diags = append(diags, diag.Diagnostic{
+				Severity:      diag.Error,
+				Summary:       fmt.Sprintf("expected type of %v to be integer", path),
+				AttributePath: path,
+			})
+			return diags
+		}
+
+		if v < min || v > max {
+			diags = append(diags, diag.Diagnostic{
+				Severity:      diag.Error,
+				Summary:       fmt.Sprintf("expected %v to be in the range (%d - %d), got %d", path, min, max, v),
+				AttributePath: path,
+			})
+			return diags
+		}
+
+		return diags
+	}
+}
+
+func StringInSliceDiagFunc(valid []string, ignoreCase bool) schema.SchemaValidateDiagFunc {
+	return func(i interface{}, path cty.Path) (diags diag.Diagnostics) {
+		v, ok := i.(string)
+		if !ok {
+			diags = append(diags, diag.Diagnostic{
+				Severity:      diag.Error,
+				Summary:       fmt.Sprintf("expected type of %s to be string", path),
+				AttributePath: path,
+			})
+			return diags
+		}
+
+		for _, str := range valid {
+			if v == str || (ignoreCase && strings.ToLower(v) == strings.ToLower(str)) {
+				return diags
+			}
+		}
+
+		diags = append(diags, diag.Diagnostic{
+			Severity:      diag.Error,
+			Summary:       fmt.Sprintf("expected %s to be one of %v, got %s", path, valid, v),
+			AttributePath: path,
+		})
+		return diags
+	}
+}
+
+// StringLenBetweenDiagFunc returns a SchemaValidateFunc which tests if the provided value
+// is of type string and has length between min and max (inclusive)
+func StringLenBetween(min, max int) schema.SchemaValidateDiagFunc {
+	return func(i interface{}, path cty.Path) (diags diag.Diagnostics) {
+		v, ok := i.(string)
+		if !ok {
+			diags = append(diags, diag.Diagnostic{
+				Severity:      diag.Error,
+				Summary:       fmt.Sprintf("expected type of %s to be string", path),
+				AttributePath: path,
+			})
+			return diags
+		}
+
+		if len(v) < min || len(v) > max {
+			diags = append(diags, diag.Diagnostic{
+				Severity:      diag.Error,
+				Summary:       fmt.Sprintf("expected length of %v to be in the range (%d - %d), got %s", path, min, max, v),
 				AttributePath: path,
 			})
 		}

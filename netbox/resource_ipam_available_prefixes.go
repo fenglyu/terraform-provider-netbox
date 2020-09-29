@@ -12,7 +12,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/fenglyu/go-netbox/netbox/client/dcim"
 	"github.com/fenglyu/go-netbox/netbox/client/ipam"
@@ -37,12 +36,14 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 		DeleteContext: resourceIpamAvailablePrefixesDelete,
 
 		Importer: &schema.ResourceImporter{
-			//State: resourceIpamAvailablePrefixesImportState,
-			State: schema.ImportStatePassthrough,
+			//StateContext: resourceIpamAvailablePrefixesImportState,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
-		// TODO after test coverage finished
+
+		// TODO when schema change happens
 		// StateUpgraders:
+
 		Timeouts: &schema.ResourceTimeout{
 			Create:  schema.DefaultTimeout(10 * time.Minute),
 			Update:  schema.DefaultTimeout(10 * time.Minute),
@@ -52,35 +53,34 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"parent_prefix": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				AtLeastOneOf: availablePrefixesKeys,
-				ValidateFunc: validation.IsCIDRNetwork(8, 128),
-				ValidateDiagFunc:
-				Description:  "crave available prefixes under the parent_prefix",
+				Type:             schema.TypeString,
+				Optional:         true,
+				ForceNew:         true,
+				AtLeastOneOf:     availablePrefixesKeys,
+				ValidateDiagFunc: IsCIDRNetworkDiagFunc(8, 128),
+				Description:      "crave available prefixes under the parent_prefix",
 			},
 			"prefix": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Computed:     true,
-				ValidateFunc: validation.IsCIDRNetwork(8, 128),
-				Description:  "craved available prefix",
+				Type:             schema.TypeString,
+				Optional:         true,
+				Computed:         true,
+				ValidateDiagFunc: IsCIDRNetworkDiagFunc(8, 128),
+				Description:      "craved available prefix",
 			},
 			"parent_prefix_id": {
-				Type:         schema.TypeInt,
-				Optional:     true,
-				ForceNew:     true,
-				AtLeastOneOf: availablePrefixesKeys,
-				ValidateFunc: validation.IntAtLeast(0),
-				Description:  "A unique integer value identifying this prefix under which is used crave available prefix",
+				Type:             schema.TypeInt,
+				Optional:         true,
+				ForceNew:         true,
+				AtLeastOneOf:     availablePrefixesKeys,
+				ValidateDiagFunc: IntAtLeastDiagFunc(0),
+				Description:      "A unique integer value identifying this prefix under which is used crave available prefix",
 			},
 			"prefix_length": {
-				Type:         schema.TypeInt,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.IntBetween(1, 128),
-				Description:  "The mask in integer form",
+				Type:             schema.TypeInt,
+				Optional:         true,
+				ForceNew:         true,
+				ValidateDiagFunc: IntBetweenDiagFunc(1, 128),
+				Description:      "The mask in integer form",
 			},
 			"role": {
 				Type:        schema.TypeString,
@@ -121,17 +121,17 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 				Description: "All IP addresses within this prefix are considered usable",
 			},
 			"status": {
-				Type:         schema.TypeString,
-				Default:      "active",
-				Optional:     true,
-				ValidateFunc: validation.StringInSlice(prefixinitializeStatus, false),
-				Description:  "Operational status of this prefix",
+				Type:             schema.TypeString,
+				Default:          "active",
+				Optional:         true,
+				ValidateDiagFunc: StringInSliceDiagFunc(prefixinitializeStatus, false),
+				Description:      "Operational status of this prefix",
 			},
 			"description": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ValidateFunc: validation.StringLenBetween(0, 200),
-				Description:  "Describe the purpose of this prefix",
+				Type:             schema.TypeString,
+				Optional:         true,
+				ValidateDiagFunc: StringLenBetween(0, 200),
+				Description:      "Describe the purpose of this prefix",
 			},
 			// Blizzard's custom_fields
 			"custom_fields": {
@@ -188,7 +188,7 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 
 		CustomizeDiff: customdiff.All(
 			customdiff.If(
-				func(d *schema.ResourceDiff, meta interface{}) bool {
+				func(ctx context.Context, d *schema.ResourceDiff, meta interface{}) bool {
 					return d.HasChange("custom_fields")
 				},
 				suppressEmptyCustomFieldsDiff,
@@ -230,7 +230,7 @@ func resourceIpamAvailablePrefixesCreate(ctx context.Context, d *schema.Resource
 		if site != nil && site.Tenant != nil {
 			//return fmt.Errorf("Site %s or its tenant not exists", d.Get("site").(string))
 			if *site.Tenant.Name != tenantData.(string) {
-				return fmt.Errorf("Incompatible site %s and the tenant %s, expected tenant %s", *site.Name, tenantData.(string), *site.Tenant.Name)
+				return diag.Errorf("Incompatible site %s and the tenant %s, expected tenant %s", *site.Name, tenantData.(string), *site.Tenant.Name)
 			}
 			tenant = site.Tenant.ID
 			wPrefix.Tenant = &tenant
@@ -297,7 +297,7 @@ func resourceIpamAvailablePrefixesCreate(ctx context.Context, d *schema.Resource
 		if wPrefix.ID == 0 {
 			results, err := getIpamPrefixes(config, d)
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 			wPrefix.ID = results[0].ID
 			prefix_id = results[0].ID
@@ -319,7 +319,8 @@ func resourceIpamAvailablePrefixesCreate(ctx context.Context, d *schema.Resource
 		// The resource didn't actually create
 		log.Fatalln("[Error] Failed to create AvaliablePrefix: ", err)
 		d.SetId("")
-		return err
+		return diag.FromErr(err)
+
 	}
 	availablePrefix := res.GetPayload()
 
@@ -336,7 +337,7 @@ func resourceIpamAvailablePrefixesRead(ctx context.Context, d *schema.ResourceDa
 
 	prefix, err := getIpamPrefix(config, d)
 	if err != nil || prefix == nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	log.Println("[INFO] resourceIpamPrefixesRead ", prefix)
@@ -418,7 +419,7 @@ func resourceIpamAvailablePrefixesUpdate(ctx context.Context, d *schema.Resource
 			}
 		}
 		if !flag {
-			return fmt.Errorf("Not a valid status in %v", prefixinitializeStatus)
+			return diag.Errorf("Not a valid status in %v", prefixinitializeStatus)
 		}
 		writablePrefix.Status = strings.ToLower(statusData)
 	}
@@ -473,7 +474,7 @@ func resourceIpamAvailablePrefixesUpdate(ctx context.Context, d *schema.Resource
 
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	partialUpdatePrefix := ipam.IpamPrefixesPartialUpdateParams{
 		ID:      int64(id),
@@ -490,7 +491,7 @@ func resourceIpamAvailablePrefixesUpdate(ctx context.Context, d *schema.Resource
 	res, uerr := config.client.Ipam.IpamPrefixesPartialUpdate(&partialUpdatePrefix, nil)
 	if uerr != nil {
 		// TODO Support verbose response body here
-		return fmt.Errorf("%v %v", res, uerr)
+		return diag.Errorf("%v %v", res, uerr)
 	}
 
 	return resourceIpamAvailablePrefixesRead(ctx, d, m)
@@ -502,7 +503,7 @@ func resourceIpamAvailablePrefixesDelete(ctx context.Context, d *schema.Resource
 	log.Printf("[INFO]Requesting Prefix deletion: %s", d.Get("prefix").(string))
 	id, err := strconv.Atoi(d.Id())
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	params := ipam.IpamPrefixesDeleteParams{
 		ID: int64(id),
@@ -513,7 +514,7 @@ func resourceIpamAvailablePrefixesDelete(ctx context.Context, d *schema.Resource
 
 	_, derr := config.client.Ipam.IpamPrefixesDelete(&params, nil)
 	if derr != nil {
-		return derr
+		return diag.FromErr(derr)
 	}
 
 	d.SetId("")
@@ -734,7 +735,7 @@ func getModelId(config *Config, d *schema.ResourceData, key string) (int64, erro
 	}
 }
 
-func resourceIpamAvailablePrefixesImportState(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceIpamAvailablePrefixesImportState(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	// config := meta.(*Config)
 	log.Println("resourceIpamAvailablePrefixesImportState ", d.Get("custom_fields"))
 	if _, ok := d.GetOk("custom_fields"); !ok {
