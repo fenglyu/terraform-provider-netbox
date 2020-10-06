@@ -36,8 +36,8 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 		DeleteContext: resourceIpamAvailablePrefixesDelete,
 
 		Importer: &schema.ResourceImporter{
-			//StateContext: resourceIpamAvailablePrefixesImportState,
-			StateContext: schema.ImportStatePassthroughContext,
+			StateContext: resourceIpamAvailablePrefixesImportState,
+			//StateContext: schema.ImportStatePassthroughContext,
 		},
 		SchemaVersion: 1,
 

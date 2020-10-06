@@ -4,7 +4,7 @@ provider "netbox" {
 
 resource "netbox_available_prefixes" "gke-pods" {
 
-  parent_prefix_id = 249
+  parent_prefix_id = 1
   prefix_length    = 23
   tags             = ["BasePathTest-acc"]
   site = "hgh3"
