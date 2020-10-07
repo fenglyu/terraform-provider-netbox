@@ -25,9 +25,10 @@ func TestAccAvailablePrefixes_basic(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
+		PreCheck: func() { testAccPreCheck(t) },
+		//Providers:         testAccProviders,
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccAvailablePrefixWithParentPrefixIdExample(context),
@@ -52,9 +53,9 @@ func TestAccAvailablePrefixes_basic1(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccAvailablePrefixWithParentPrefixIdExample1(context),
@@ -77,9 +78,9 @@ func TestAccAvailablePrefixes_basic2(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccAvailablePrefixWithParentPrefixIdExample2(context),
@@ -102,9 +103,9 @@ func TestAccAvailablePrefixes_EmptyCustomFields(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccAvailablePrefixWithParentPrefixEmptyCF(context),
@@ -127,9 +128,9 @@ func TestAccAvailablePrefixesMultipleSteps(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccAvailablePrefixWithParentPrefixIdMultipleStep1(context),

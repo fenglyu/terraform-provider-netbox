@@ -120,6 +120,7 @@ var (
 	testAccProvider       *schema.Provider
 	testAccRandomProvider *schema.Provider
 
+	testAccProviderFactories        map[string]func() (*schema.Provider, error)
 	checkPrefixIdOnce               sync.Once
 	testNetboxParentPrefixId        int
 	testNetboxParentPrefixIdWithVrf int
@@ -130,6 +131,12 @@ func init() {
 
 	testAccProviders = map[string]*schema.Provider{
 		"netbox": testAccProvider,
+	}
+
+	testAccProviderFactories = map[string]func() (*schema.Provider, error){
+		"netbox": func() (*schema.Provider, error) {
+			return testAccProvider, nil
+		},
 	}
 	// check the existance of two test parent prefix id
 	checkPrefixId()
@@ -227,10 +234,10 @@ func TestAccProviderBasePath_setBasePath(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
-
-		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
+		PreCheck: func() { testAccPreCheck(t) },
+		//Providers:         testAccProviders,
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccProviderBasePath_setBasePath(context),
@@ -252,8 +259,9 @@ func TestAccProviderBasePath_setInvalidBasePath(t *testing.T) {
 		"host":     "www.example.com",
 	}
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck: func() { testAccPreCheck(t) },
+		//Providers:         testAccProviders,
+		ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccProviderBasePath_setInvalidBasePath(context),

@@ -19,9 +19,9 @@ func TestAccDataSourceAvailablePrefixesByPrefix(t *testing.T) {
 	resourceName := "data.netbox_available_prefixes.bar"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckDataSourceAvailablePrefixesDestroyProducer(t),
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckDataSourceAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceAvailablePrefixesConfigByPrefix(context),
@@ -57,9 +57,9 @@ func TestAccDataSourceAvailablePrefixesByPrefixId(t *testing.T) {
 	}
 	resourceName := "data.netbox_available_prefixes.bar"
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckDataSourceAvailablePrefixesDestroyProducer(t),
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckDataSourceAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceAvailablePrefixesConfigByPrefixId(context),
@@ -99,9 +99,9 @@ func TestAccDataSourceAvailablePrefixesByTag(t *testing.T) {
 	resourceName := "data.netbox_available_prefixes.tag"
 	//resourceRoleName := "data.netbox_available_prefixes.bar"
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckDataSourceAvailablePrefixesDestroyProducer(t),
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckDataSourceAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceAvailablePrefixesConfigByParameters(context),
@@ -154,9 +154,9 @@ func TestAccDataSourceAvailablePrefixesByRole(t *testing.T) {
 	resourceName := "data.netbox_available_prefixes.role"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckDataSourceAvailablePrefixesDestroyProducer(t),
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckDataSourceAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDataSourceAvailablePrefixesConfigByParameters(context),
