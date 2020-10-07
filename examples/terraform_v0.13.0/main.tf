@@ -7,10 +7,10 @@ resource "netbox_available_prefixes" "gke-pods" {
   parent_prefix_id = 1
   prefix_length    = 23
   tags             = ["BasePathTest-acc"]
-  site = "hgh3"
-  vlan = "HGH3A OS"
-
+  vrf ="activision"
   /*
+    site = "hgh3"
+    vlan = "HGH3A OS"
     custom_fields   {
       helpers      = "sdfdf"
 

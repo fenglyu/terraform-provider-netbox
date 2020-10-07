@@ -361,9 +361,19 @@ func resourceIpamAvailablePrefixesRead(ctx context.Context, d *schema.ResourceDa
 	if prefix != nil && prefix.Role != nil {
 		d.Set("role", prefix.Role.Name)
 	}
-
-	if ppid, ok := d.GetOk("parent_prefix_id"); ok {
-		d.Set("parent_prefix_id", ppid.(int))
+	/*
+		if ppid, ok := d.GetOk("parent_prefix_id"); ok {
+			d.Set("parent_prefix_id", ppid.(int))
+		}
+	*/
+	if prefix.Prefix != nil && *prefix.Prefix != "" {
+		parentPrefix, err := getIpamParentPrefixes(config, d, prefix)
+		if err != nil || parentPrefix == nil {
+			return diag.FromErr(err)
+		}
+		if parentPrefix != nil && *parentPrefix.Prefix != "" {
+			d.Set("parent_prefix_id", int(parentPrefix.ID))
+		}
 	}
 
 	d.Set("prefix", prefix.Prefix)
@@ -530,8 +540,8 @@ func getIpamPrefix(config *Config, d *schema.ResourceData) (*models.Prefix, erro
 	params := ipam.IpamPrefixesReadParams{
 		ID: int64(id),
 	}
-	params.WithContext(context.Background())
 
+	params.WithContext(context.Background())
 	ipamPrefixesReadOK, err := config.client.Ipam.IpamPrefixesRead(&params, nil)
 	if err != nil || ipamPrefixesReadOK == nil {
 		return nil, fmt.Errorf("Cannot determine prefix with ID %d", id)
@@ -574,6 +584,46 @@ func getIpamPrefixes(config *Config, d *schema.ResourceData) ([]*models.Prefix, 
 	log.Println("[getIpamPrefixes] ipamPrefixListBody", string(ipamPrefixesReadOKRes))
 
 	return ipamPrefixListBody.Payload.Results, nil
+}
+
+func getIpamParentPrefixes(config *Config, d *schema.ResourceData, prefix *models.Prefix) (*models.Prefix, error) {
+	// Compose Parameters for GET: /ipam/prefixes/
+	// The api call to get parent prefix is like: /api/ipam/prefixes/?contains=10.1.0.0/16&vrf_id=null
+	// The WebUI parent prefix fetch pretty much uses the same DB query logic: https://github.com/netbox-community/netbox/blob/develop/netbox/ipam/views.py#L342-L349
+	param := ipam.IpamPrefixesListParams{
+		Context:  context.Background(),
+		Contains: prefix.Prefix,
+	}
+
+	var vrfID string
+	if prefix.Vrf != nil {
+		vrfID = strconv.FormatInt(prefix.Vrf.ID, 10)
+		param.VrfID = &vrfID
+	} else {
+		param.VrfID = &vrfID
+	}
+
+	ipamPrefixListBody, err := config.client.Ipam.IpamPrefixesList(&param, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if ipamPrefixListBody == nil || ipamPrefixListBody.Payload == nil || *ipamPrefixListBody.Payload.Count < 1 {
+		return nil, fmt.Errorf("Unknow prefix %s with ID %s, not found", prefix, d.Id())
+	} else if *ipamPrefixListBody.Payload.Count < 2 {
+		return nil, fmt.Errorf("prefix %s with ID %s has no parent prefix", prefix, d.Id())
+	}
+	// trace level log
+	ipamPrefixesReadOKRes, _ := json.Marshal(&ipamPrefixListBody.Payload.Results)
+	log.Println("[getIpamParentPrefixes] ipamPrefixListBody", string(ipamPrefixesReadOKRes))
+
+	var parent *models.Prefix
+	for _, p := range ipamPrefixListBody.Payload.Results {
+		if !strings.EqualFold(*p.Prefix, *prefix.Prefix) {
+			parent = p
+		}
+	}
+	return parent, nil
 }
 
 func getParentPrefix(config *Config, d *schema.ResourceData) (string, error) {
