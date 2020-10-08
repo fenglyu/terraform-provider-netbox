@@ -317,13 +317,19 @@ func resourceIpamAvailablePrefixesCreate(ctx context.Context, d *schema.Resource
 	res, err := config.client.Ipam.IpamPrefixesAvailablePrefixesCreate(&param, nil)
 	if err != nil {
 		// The resource didn't actually create
-		log.Fatalln("[Error] Failed to create AvaliablePrefix: ", err)
+		log.Println("[Error] Failed to create AvaliablePrefix: ", err)
 		d.SetId("")
+		// work around  netbox insufficient space response problem which returns 204 http code with a message body
+		// although according to https://tools.ietf.org/html/rfc2616#section-10.2.5, The 204 response MUST NOT include a message-body,
+		// and thus is always terminated by the first empty line after the header fields.
+		if strings.Contains(err.Error(), "204") {
+			log.Printf("[WARN] Insufficient space is available to accommodate the requested prefix size(s) \"/%d\"", prefixlength)
+			return diag.Errorf("Insufficient space is available to accommodate the requested prefix size(s) \"/%d\"", prefixlength)
+		}
 		return diag.FromErr(err)
-
 	}
-	availablePrefix := res.GetPayload()
 
+	availablePrefix := res.GetPayload()
 	d.SetId(fmt.Sprintf("%d", availablePrefix.ID))
 
 	return resourceIpamAvailablePrefixesRead(ctx, d, m)
