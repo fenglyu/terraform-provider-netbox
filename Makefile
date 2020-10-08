@@ -60,7 +60,8 @@ test: fmtcheck generate
 test-netbox-env-up: $(eval SHELL:=/bin/bash)
 	pushd tests/netbox-docker >/dev/null 2>&1; \
 	NETBOX_IMAGE="$(TEST_NETBOX_IMAGE)" docker-compose up -d ; \
-	popd >/dev/null 2>&1;
+	#NETBOX_IMAGE="$(TEST_NETBOX_IMAGE)" docker-compose up ; \
+	popd >/dev/null 2>&1; \
 
 test-netbox-env-down: $(eval SHELL:=/bin/bash)
 	pushd tests/netbox-docker >/dev/null 2>&1; \

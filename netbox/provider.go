@@ -1,16 +1,16 @@
 package netbox
 
 import (
+	"context"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // Global MutexKV
 var mutexKV = NewMutexKV()
 
-func Provider() terraform.ResourceProvider {
+func Provider() *schema.Provider {
 	provider := &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"api_token": {
@@ -84,7 +84,7 @@ func providerConfigure(d *schema.ResourceData, p *schema.Provider, terraformVers
 		}
 	}
 
-	if err := config.LoadAndValidate(p.StopContext()); err != nil {
+	if err := config.LoadAndValidate(context.Background()); err != nil {
 		return nil, err
 	}
 

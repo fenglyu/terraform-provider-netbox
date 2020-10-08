@@ -12,12 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"github.com/terraform-providers/terraform-provider-random/random"
-
 	"github.com/fenglyu/go-netbox/netbox/client/ipam"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 var netboxApiTokenEnvVars = []string{
@@ -119,29 +116,34 @@ func randString(t *testing.T, length int) string {
 }
 
 var (
-	testAccProviders      map[string]terraform.ResourceProvider
+	testAccProviders      map[string]*schema.Provider
 	testAccProvider       *schema.Provider
 	testAccRandomProvider *schema.Provider
 
+	testAccProviderFactories        map[string]func() (*schema.Provider, error)
 	checkPrefixIdOnce               sync.Once
 	testNetboxParentPrefixId        int
 	testNetboxParentPrefixIdWithVrf int
 )
 
 func init() {
-	testAccProvider = Provider().(*schema.Provider)
-	testAccRandomProvider = random.Provider().(*schema.Provider)
+	testAccProvider = Provider()
 
-	testAccProviders = map[string]terraform.ResourceProvider{
+	testAccProviders = map[string]*schema.Provider{
 		"netbox": testAccProvider,
-		"random": testAccRandomProvider,
+	}
+
+	testAccProviderFactories = map[string]func() (*schema.Provider, error){
+		"netbox": func() (*schema.Provider, error) {
+			return testAccProvider, nil
+		},
 	}
 	// check the existance of two test parent prefix id
 	checkPrefixId()
 }
 
 func TestProvider(t *testing.T) {
-	if err := Provider().(*schema.Provider).InternalValidate(); err != nil {
+	if err := Provider().InternalValidate(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 }
@@ -232,9 +234,10 @@ func TestAccProviderBasePath_setBasePath(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
+		PreCheck: func() { testAccPreCheck(t) },
+		//Providers:         testAccProviders,
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccProviderBasePath_setBasePath(context),
@@ -256,8 +259,9 @@ func TestAccProviderBasePath_setInvalidBasePath(t *testing.T) {
 		"host":     "www.example.com",
 	}
 	resource.Test(t, resource.TestCase{
-		PreCheck:  func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck: func() { testAccPreCheck(t) },
+		//Providers:         testAccProviders,
+		ProviderFactories: testAccProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccProviderBasePath_setInvalidBasePath(context),

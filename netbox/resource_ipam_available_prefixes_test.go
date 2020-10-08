@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/go-multierror"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	"github.com/fenglyu/go-netbox/netbox/client/ipam"
 	"github.com/fenglyu/go-netbox/netbox/models"
@@ -24,9 +25,10 @@ func TestAccAvailablePrefixes_basic(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
+		PreCheck: func() { testAccPreCheck(t) },
+		//Providers:         testAccProviders,
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccAvailablePrefixWithParentPrefixIdExample(context),
@@ -51,9 +53,9 @@ func TestAccAvailablePrefixes_basic1(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccAvailablePrefixWithParentPrefixIdExample1(context),
@@ -76,9 +78,9 @@ func TestAccAvailablePrefixes_basic2(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccAvailablePrefixWithParentPrefixIdExample2(context),
@@ -101,9 +103,9 @@ func TestAccAvailablePrefixes_EmptyCustomFields(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccAvailablePrefixWithParentPrefixEmptyCF(context),
@@ -126,9 +128,9 @@ func TestAccAvailablePrefixesMultipleSteps(t *testing.T) {
 	}
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAvailablePrefixesDestroyProducer(t),
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccCheckAvailablePrefixesDestroyProducer(t),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccAvailablePrefixWithParentPrefixIdMultipleStep1(context),
@@ -318,14 +320,18 @@ func testAccCheckAvailablePrefixesDestroyProducer(t *testing.T) func(s *terrafor
 
 func sendRequestforPrefix(config *Config, rs *terraform.ResourceState) ([]*models.Prefix, error) {
 	idStr := rs.Primary.Attributes["id"]
+
 	idList := make([]string, 0)
 	// datasource
 	re := regexp.MustCompile(`[a-zA-Z-_]+`)
 	if re.MatchString(idStr) {
-		prefixesLen, _ := strconv.Atoi(rs.Primary.Attributes["prefixes.#"])
+		prefixesLen, err := strconv.Atoi(rs.Primary.Attributes["prefixes.#"])
+		if err != nil {
+			return nil, err
+		}
 		i := 0
 		for i < prefixesLen {
-			id := rs.Primary.Attributes[fmt.Sprintf("refixes.%d.id", i)]
+			id := rs.Primary.Attributes[fmt.Sprintf("prefixes.%d.id", i)]
 			idList = append(idList, id)
 			i++
 		}
@@ -339,6 +345,7 @@ func sendRequestforPrefix(config *Config, rs *terraform.ResourceState) ([]*model
 	for _, ids := range idList {
 		id, err := strconv.Atoi(ids)
 		if err != nil {
+			log.Println("err ==> ", ids)
 			return nil, err
 		}
 		params := ipam.IpamPrefixesReadParams{

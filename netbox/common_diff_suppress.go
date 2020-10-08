@@ -1,8 +1,10 @@
 package netbox
 
 import (
+	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func emptyOrDefaultStringSuppress(defaultVal string) schema.SchemaDiffSuppressFunc {
@@ -11,7 +13,7 @@ func emptyOrDefaultStringSuppress(defaultVal string) schema.SchemaDiffSuppressFu
 	}
 }
 
-func suppressEmptyCustomFieldsDiff(d *schema.ResourceDiff, meta interface{}) error {
+func suppressEmptyCustomFieldsDiff(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
 	oldi, newi := d.GetChange("custom_fields")
 
 	old, ok := oldi.([]interface{})
