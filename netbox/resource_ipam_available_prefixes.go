@@ -615,9 +615,9 @@ func getIpamParentPrefixes(config *Config, d *schema.ResourceData, prefix *model
 	}
 
 	if ipamPrefixListBody == nil || ipamPrefixListBody.Payload == nil || *ipamPrefixListBody.Payload.Count < 1 {
-		return nil, fmt.Errorf("Unknow prefix %s with ID %s, not found", prefix, d.Id())
+		return nil, fmt.Errorf("Unknow prefix %s with ID %s, not found", *prefix.Prefix, d.Id())
 	} else if *ipamPrefixListBody.Payload.Count < 2 {
-		return nil, fmt.Errorf("prefix %s with ID %s has no parent prefix", prefix, d.Id())
+		return nil, fmt.Errorf("prefix %s with ID %s has no parent prefix", *prefix.Prefix, d.Id())
 	}
 	// trace level log
 	ipamPrefixesReadOKRes, _ := json.Marshal(&ipamPrefixListBody.Payload.Results)
