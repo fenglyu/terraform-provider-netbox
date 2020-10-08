@@ -15,7 +15,7 @@ func main() {
 	flag.Parse()
 
 	if debugMode {
-		err := plugin.Debug(context.Background(), "registry.terraform.io/namespace/provider",
+		err := plugin.Debug(context.Background(), "registry.terraform.io/-/netbox",
 			&plugin.ServeOpts{
 				ProviderFunc: netbox.Provider,
 			})
