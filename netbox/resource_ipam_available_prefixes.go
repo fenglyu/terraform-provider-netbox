@@ -211,7 +211,7 @@ func resourceIpamAvailablePrefixesCreate(ctx context.Context, d *schema.Resource
 
 	//As of version 2.8, Netbox doesn't require "prefix" in post data,
 	//only prefix_length and a parent_id is mandatory
-	//prerent_prefix here is prepared to fetch prrent_prefix_id only
+	//prarent_prefix here is only needed to fetch prarent_prefix_id only
 	//wPrefix.Prefix = &prefix
 	var prefixlength int64
 	if pl, ok := d.GetOk("prefix_length"); ok {
