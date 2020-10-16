@@ -5,9 +5,9 @@ provider "netbox" {
 
 
 resource "netbox_available_prefixes" "gke-pods" {
-
-    parent_prefix_id = 2
-    prefix_length = 23
+    parent_prefix = "240.0.0.0/4"
+    //parent_prefix_id = 2
+    prefix_length = 7
     tags = ["BasePathTest-acc"]
   /*
     custom_fields   {
