@@ -57,14 +57,14 @@ func resourceIpamAvailablePrefixes() *schema.Resource {
 				Optional:         true,
 				ForceNew:         true,
 				AtLeastOneOf:     availablePrefixesKeys,
-				ValidateDiagFunc: IsCIDRNetworkDiagFunc(8, 128),
+				ValidateDiagFunc: IsCIDRNetworkDiagFunc(1, 128),
 				Description:      "crave available prefixes under the parent_prefix",
 			},
 			"prefix": {
 				Type:             schema.TypeString,
 				Optional:         true,
 				Computed:         true,
-				ValidateDiagFunc: IsCIDRNetworkDiagFunc(8, 128),
+				ValidateDiagFunc: IsCIDRNetworkDiagFunc(1, 128),
 				Description:      "craved available prefix",
 			},
 			"parent_prefix_id": {
