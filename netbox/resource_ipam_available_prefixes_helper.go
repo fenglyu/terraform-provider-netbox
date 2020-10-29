@@ -320,7 +320,7 @@ func StringInSliceDiagFunc(valid []string, ignoreCase bool) schema.SchemaValidat
 		}
 
 		for _, str := range valid {
-			if v == str || (ignoreCase && strings.ToLower(v) == strings.ToLower(str)) {
+			if v == str || (ignoreCase && strings.EqualFold(v, str)) {
 				return diags
 			}
 		}

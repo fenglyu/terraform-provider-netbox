@@ -367,18 +367,23 @@ func resourceIpamAvailablePrefixesRead(ctx context.Context, d *schema.ResourceDa
 	if prefix != nil && prefix.Role != nil {
 		d.Set("role", prefix.Role.Name)
 	}
-	/*
-		if ppid, ok := d.GetOk("parent_prefix_id"); ok {
-			d.Set("parent_prefix_id", ppid.(int))
-		}
-	*/
+
 	if prefix.Prefix != nil && *prefix.Prefix != "" {
 		parentPrefix, err := getIpamParentPrefixes(config, d, prefix)
-		if err != nil || parentPrefix == nil {
+		if err != nil {
 			return diag.FromErr(err)
 		}
+		if parentPrefix == nil {
+			return diag.Errorf("prefix %s's doens't seem to have a parent prefix", *prefix.Prefix)
+		}
 		if parentPrefix != nil && *parentPrefix.Prefix != "" {
-			d.Set("parent_prefix_id", int(parentPrefix.ID))
+			if _, ok := d.GetOk("parent_prefix_id"); ok {
+				d.Set("parent_prefix_id", int(parentPrefix.ID))
+			}
+
+			if _, ok := d.GetOk("parent_prefix"); ok {
+				d.Set("parent_prefix", parentPrefix.Prefix)
+			}
 		}
 	}
 

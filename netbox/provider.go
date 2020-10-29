@@ -2,6 +2,7 @@ package netbox
 
 import (
 	"context"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -50,7 +51,7 @@ func Provider() *schema.Provider {
 		ResourcesMap: ResourceMap(),
 	}
 
-	provider.ConfigureFunc = func(d *schema.ResourceData) (interface{}, error) {
+	provider.ConfigureContextFunc = func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		terraformVersion := provider.TerraformVersion
 		if terraformVersion == "" {
 			// Terraform 0.12 introduced this field to the protocol
@@ -69,7 +70,7 @@ func ResourceMap() map[string]*schema.Resource {
 	}
 }
 
-func providerConfigure(d *schema.ResourceData, p *schema.Provider, terraformVersion string) (interface{}, error) {
+func providerConfigure(d *schema.ResourceData, p *schema.Provider, terraformVersion string) (interface{}, diag.Diagnostics) {
 	config := Config{
 		ApiToken: d.Get("api_token").(string),
 		Host:     d.Get("host").(string),
@@ -80,12 +81,12 @@ func providerConfigure(d *schema.ResourceData, p *schema.Provider, terraformVers
 		var err error
 		config.RequestTimeout, err = time.ParseDuration(v.(string))
 		if err != nil {
-			return nil, err
+			return nil, diag.FromErr(err)
 		}
 	}
 
 	if err := config.LoadAndValidate(context.Background()); err != nil {
-		return nil, err
+		return nil, diag.FromErr(err)
 	}
 
 	return &config, nil
