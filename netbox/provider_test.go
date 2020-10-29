@@ -116,9 +116,8 @@ func randString(t *testing.T, length int) string {
 }
 
 var (
-	testAccProviders      map[string]*schema.Provider
-	testAccProvider       *schema.Provider
-	testAccRandomProvider *schema.Provider
+	testAccProviders map[string]*schema.Provider
+	testAccProvider  *schema.Provider
 
 	testAccProviderFactories        map[string]func() (*schema.Provider, error)
 	checkPrefixIdOnce               sync.Once
