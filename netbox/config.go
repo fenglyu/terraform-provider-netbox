@@ -32,13 +32,6 @@ var (
 	prefixStatusReserved   int64 = 2
 	prefixStatusDeprecated int64 = 3
 
-	prefixStatusIDMap = map[string]int64{
-		"container":  prefixStatusContainer,
-		"active":     prefixStatusActive,
-		"reserved":   prefixStatusReserved,
-		"deprecated": prefixStatusDeprecated,
-	}
-
 	NetboxApiGeneralQueryLimit int64 = 0
 )
 
@@ -117,16 +110,13 @@ func getHost(Host string) (string, []string) {
 		case strings.EqualFold(u.Scheme, "https"):
 			schemes = append(schemes, "https")
 			host = fmt.Sprintf("%s:%s", u.Hostname(), u.Port())
-			break
 		case strings.EqualFold(u.Scheme, "http"):
 			schemes = append(schemes, "http")
 			host = fmt.Sprintf("%s:%s", u.Hostname(), u.Port())
-			break
 		default:
 			// use https by default
 			// when schema is empty, then host is c.Host
 			schemes = append(schemes, "https")
-			break
 		}
 	}
 	return host, schemes
