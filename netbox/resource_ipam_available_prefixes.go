@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"log"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
@@ -337,9 +337,6 @@ func resourceIpamAvailablePrefixesCreate(ctx context.Context, d *schema.Resource
 
 func resourceIpamAvailablePrefixesRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	config := m.(*Config)
-
-	log.Println("d state", d.State())
-	log.Println("custom_fields.# ", d.Get("custom_fields.#"))
 
 	prefix, err := getIpamPrefix(config, d)
 	if err != nil || prefix == nil {
