@@ -14,6 +14,7 @@ Get information about a prefix
 
 ```hcl
 data "netbox_available_prefixes" "foo"{
+  name = "prefix_lookup"
   prefix = "10.0.0.0/28"
 }
 ```
@@ -25,17 +26,98 @@ resource "netbox_available_prefixes" "foo" {
 }
 
 data "netbox_available_prefixes" "bar"{
+  name = "prefix_lookup"
   prefix_id = netbox_available_prefixes.foo.id
+}
+```
+
+## Query with certain tag or role 
+```hcl
+resource "netbox_available_prefixes" "foo" {
+  ...
+  tags        = ["datasource-%{random_suffix}-accTag01", "datasource-AvailablePrefix-accTag02", "datasource-AvailablePrefix-accTag03"]
+  custom_fields  {}
+}
+
+resource "netbox_available_prefixes" "bar" {
+  ...
+  tags        = ["datasource-%{random_suffix}-accTag01", "datasource-AvailablePrefix-accTag04", "datasource-AvailablePrefix-accTag05"]
+  custom_fields  {}
+}
+
+resource "netbox_available_prefixes" "neo" {
+  ...
+  tags        = ["datasource-%{random_suffix}-accTag06", "datasource-AvailablePrefix-accTag07", "datasource-AvailablePrefix-accTag08"]
+  custom_fields  {}
+}
+
+data "netbox_available_prefixes" "tag"{
+  name = "prefix_lookup_by_tag"
+  tag = lower("datasource-%{random_suffix}-accTag01")
+  depends_on  = [netbox_available_prefixes.bar, netbox_available_prefixes.foo, netbox_available_prefixes.neo]
+}
+
+data "netbox_available_prefixes" "role"{
+  name = "prefix_lookup_by_role"
+  role =  lower("cloudera")
+  depends_on  = [netbox_available_prefixes.bar, netbox_available_prefixes.foo, netbox_available_prefixes.neo]
 }
 ```
 
 ## Argument Reference
 
 The following arguments are supported:
-
+* `name`   - (Required) A unique dedicated name for the data resource. 
 * `prefix` - (Optional) The prefix in CIDR notation. One of `prefix` or `prefix_id` must be provided.
-* `prefix_id` - (Optional) The Id of prefix. One of `prefix` or `prefix_id` must be provided.
+* `id` - (Optional) The Id of prefix. One of `prefix` or `id` must be provided.
 
+## Other arguments also supported in pfix query includes
+```
+  is_pool
+  tenant_group_id
+  tenant_group
+  tenant_id
+  tenant
+  q
+  family
+  prefix
+  within
+  within_include
+  contains
+  mask_length
+  vrf_id
+  vrf
+  region_id
+  region
+  site_id
+  site
+  vlan_id
+  vlan_vid
+  role_id
+  role
+  status
+  tag
+  id__n
+  id__lte
+  id__lt
+  id__gte
+  id__gt
+  tenant_group_id__n
+  tenant_group__n
+  tenant_id__n
+  tenant__n
+  vrf_id__n
+  vrf__n
+  region_id__n
+  region__n
+  site_id__n
+  site__n
+  vlan_id__n
+  role_id__n
+  role__n
+  status__n
+  tag__n
+```
 
 ## Attributes Reference
 * `prefix`  - The available prefix in CIDR notation which is computed.

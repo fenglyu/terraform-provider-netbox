@@ -3,13 +3,13 @@ package netbox
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/go-multierror"
 	"log"
 	"regexp"
 	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
