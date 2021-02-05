@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"flag"
+	"log"
+
 	"github.com/fenglyu/terraform-provider-netbox/netbox"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
-	"log"
 )
 
 func main() {
