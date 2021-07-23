@@ -3,18 +3,18 @@ provider "netbox" {
 
 resource "netbox_available_prefixes" "foo" {
   parent_prefix_id = 627
-  prefix_length = 29
+  prefix_length    = 29
   is_pool          = true
   status           = "active"
-  tags = ["AvailablePrefix-acc-01", "AvailablePrefix-acc-02", "AvailablePrefix-acc-03"]
-  vrf         = "activision"
+  tags             = ["AvailablePrefix-acc-01", "AvailablePrefix-acc-02", "AvailablePrefix-acc-03"]
+  vrf              = "activision"
 
-   custom_fields  {/*
+  custom_fields { /*
      helpers      = "abcd"
 */
-       ipv4_acl_in  = "sdf"
+    ipv4_acl_in = "sdf"
 
-           ipv4_acl_out = "sdfd"
+    ipv4_acl_out = "sdfd"
 
   }
 

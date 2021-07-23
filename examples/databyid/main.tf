@@ -1,7 +1,7 @@
 provider "netbox" {
   //api_token = "<authentication token>"
- // host      = "netbox.k8s.me"
-  base_path = "/api"
+  // host      = "netbox.k8s.me"
+  base_path       = "/api"
   request_timeout = "4m"
 }
 
@@ -13,18 +13,18 @@ resource "netbox_available_prefixes" "gke-pods" {
   prefix_length    = 29
   is_pool          = true
   status           = "active"
-  site = "hgh3"
-  vlan = "HGH3A OS"
-  role = "Production"
-  description = "foo"
-  tags        = ["test01", "test02"]
+  site             = "hgh3"
+  vlan             = "HGH3A OS"
+  role             = "Production"
+  description      = "foo"
+  tags             = ["test01", "test02"]
   custom_fields {}
 }
 
 
-data "netbox_available_prefixes" "foo"{
+data "netbox_available_prefixes" "foo" {
   name = "querybyId"
-  id = netbox_available_prefixes.gke-pods.id
+  id   = netbox_available_prefixes.gke-pods.id
   //prefix = "10.0.0.0/28"
 }
 

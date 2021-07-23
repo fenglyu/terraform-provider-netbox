@@ -1,12 +1,12 @@
 provider "netbox" {
-  api_token = "<authentication token>"
-  host      = "netbox.k8s.me"
-  base_path      = "/api"
+  api_token       = "<authentication token>"
+  host            = "netbox.k8s.me"
+  base_path       = "/api"
   request_timeout = "4m"
 }
 
-data "netbox_available_prefixes" "foo"{
-  name = "dataprefix"
+data "netbox_available_prefixes" "foo" {
+  name   = "dataprefix"
   prefix = "10.0.0.0/28"
 }
 

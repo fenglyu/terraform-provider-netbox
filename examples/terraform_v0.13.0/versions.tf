@@ -2,12 +2,13 @@ terraform {
   required_version = ">= 0.13"
   required_providers {
 
-    terraform = {
-      source = "terraform.io/builtin/terraform"
-    }
+    //   terraform = {
+    //     source = "terraform.io/builtin/terraform"
+    //   }
 
     netbox = {
-      source  = "registry.terraform.io/-/netbox"
+      //source  = "registry.terraform.io/-/netbox"
+      source  = "terraform.cloud.blizzard.net/cf/netbox"
       version = "~> 0.1.5"
     }
   }

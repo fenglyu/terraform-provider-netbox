@@ -34,7 +34,8 @@ gox:
 
 build-dev: fmtcheck generate
 	@[ -z "${version}" ] || ( echo "==> please use 'make build-dev version=vX.Y.Z'" )
-	go build  -ldflags="-X main.GitCommit=${GIT_COMMIT}" -o ~/.terraform.d/plugins/registry.terraform.io/-/netbox/${version}/${PLATFORM}_${XC_ARCH}/terraform-provider-$(PKG_NAME)_v${version} .
+	#go build  -ldflags="-X main.GitCommit=${GIT_COMMIT}" -o ~/.terraform.d/plugins/registry.terraform.io/-/netbox/${version}/${PLATFORM}_${XC_ARCH}/terraform-provider-$(PKG_NAME)_v${version} .
+	go build  -ldflags="-X main.GitCommit=${GIT_COMMIT}" -o /usr/local/terraform/plugins/terraform.cloud.blizzard.net/cf/netbox/${version}/${PLATFORM}_${XC_ARCH}/terraform-provider-$(PKG_NAME)_v${version} .
 
 build: fmtcheck generate prep gox
 	@echo "==> Building..."

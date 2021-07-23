@@ -63,7 +63,7 @@ output "available_prefix_tags" {
 }
 
 output "available_prefix_tags_values" {
- value = data.netbox_available_prefixes.tag.prefixes
+  value = data.netbox_available_prefixes.tag.prefixes
 }
 
 output "available_prefix_role" {

@@ -5,9 +5,9 @@ provider "netbox" {
 resource "netbox_available_prefixes" "gke-pods" {
 
   parent_prefix_id = 1
-  prefix_length    = 28
+  prefix_length    = 27
   tags             = ["BasePathTest-acc"]
-  vrf ="activision"
+  vrf              = "activision"
   /*
     site = "hgh3"
     vlan = "HGH3A OS"

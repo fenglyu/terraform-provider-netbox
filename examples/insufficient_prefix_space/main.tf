@@ -3,7 +3,7 @@ provider "netbox" {
 }
 
 resource "netbox_available_prefixes" "gke-pods" {
-  count = 4
+  count            = 4
   parent_prefix_id = 3
   prefix_length    = 9
   tags             = ["BasePathTest-acc"]
