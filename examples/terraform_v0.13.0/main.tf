@@ -5,20 +5,9 @@ provider "netbox" {
 resource "netbox_available_prefixes" "gke-pods" {
 
   parent_prefix_id = 1
-  prefix_length    = 27
-  tags             = ["BasePathTest-acc"]
+  prefix_length    = 25
+  tags             = ["BasePathTest-acc", "flv"]
   vrf              = "activision"
-  /*
-    site = "hgh3"
-    vlan = "HGH3A OS"
-    custom_fields   {
-      helpers      = "sdfdf"
-
-      ipv4_acl_in  = "ipv4_a343434cl_in"
-      ipv4_acl_out = "ipv4_aefserwcl_out"
-
-  }
-*/
   custom_fields {}
 }
 

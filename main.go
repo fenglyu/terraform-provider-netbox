@@ -16,7 +16,7 @@ func main() {
 	flag.Parse()
 
 	if debugMode {
-		err := plugin.Debug(context.Background(), "registry.terraform.io/-/netbox",
+		err := plugin.Debug(context.Background(), "terraform.cloud.blizzard.net/cf/netbox",
 			&plugin.ServeOpts{
 				ProviderFunc: netbox.Provider,
 			})

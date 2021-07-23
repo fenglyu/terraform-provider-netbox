@@ -7,7 +7,7 @@ terraform {
     }
 
     netbox = {
-      source  = "registry.terraform.io/-/netbox"
+      source  = "terraform.cloud.blizzard.net/cf/netbox"
       version = "~> 0.1.8"
     }
   }
