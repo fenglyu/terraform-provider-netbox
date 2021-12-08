@@ -25,7 +25,7 @@ prep:
 
 gox:
 	@echo "==> Installing gox..."
-	@go get github.com/mitchellh/gox
+	@go install github.com/mitchellh/gox@v1.0.1
 
 ## comment out for terraform 0.12
 #build-dev: fmtcheck generate

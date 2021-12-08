@@ -1,6 +1,11 @@
 provider "netbox" {
   request_timeout = "4m"
 }
+provider "netbox" {
+  api_token = "<authentication token>"
+  host      = "netbox.k8s.me"
+  base_path = "/api"
+}
 
 resource "netbox_available_prefixes" "gke-pods" {
 
