@@ -6,3 +6,4 @@
 pkg/
 logs/
 **/*/.terraform.lock.hcl
+.vscode

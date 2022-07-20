@@ -105,33 +105,30 @@ func flatternNestedVRFV247(nv *models.NestedVRF) []map[string]interface{} {
 }
 
 /*
-func flatternNestedVRF(nv *models.NestedVRF) []map[string]interface{} {
-	return []map[string]interface{}{{
-		"id":           nv.ID,
-		"prefix_count": nv.PrefixCount,
-		"name":         nv.Name,
-		"url":          nv.URL.String(),
-		"rd":           nv.Rd,
-	}}
-}
-
-
-func flattenCustomFields(p *models.Prefix) map[string]string {
-	cf := p.CustomFields.(map[string]interface{})
-	cfMap := make(map[string]string)
-	for k, v := range cf {
-		cfMap[k] = v.(string)
+	func flatternNestedVRF(nv *models.NestedVRF) []map[string]interface{} {
+		return []map[string]interface{}{{
+			"id":           nv.ID,
+			"prefix_count": nv.PrefixCount,
+			"name":         nv.Name,
+			"url":          nv.URL.String(),
+			"rd":           nv.Rd,
+		}}
 	}
-	return cfMap
-}
 
+	func flattenCustomFields(p *models.Prefix) map[string]string {
+		cf := p.CustomFields.(map[string]interface{})
+		cfMap := make(map[string]string)
+		for k, v := range cf {
+			cfMap[k] = v.(string)
+		}
+		return cfMap
+	}
 
-type CustomFields struct {
-	Helpers      string `json:"helpers"`
-	Ipv4_acl_in  string `json:"ipv4_acl_in"`
-	Ipv4_acl_out string `json:"ipv4_acl_out"`
-}
-
+	type CustomFields struct {
+		Helpers      string `json:"helpers"`
+		Ipv4_acl_in  string `json:"ipv4_acl_in"`
+		Ipv4_acl_out string `json:"ipv4_acl_out"`
+	}
 */
 func convertStringSet(set *schema.Set) []string {
 	s := make([]string, 0, set.Len())
