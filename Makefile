@@ -3,8 +3,9 @@ WEBSITE_REPO=github.com/hashicorp/terraform-website
 PKG_NAME=netbox
 DIR_NAME=netbox
 PLATFORM=linux
-XC_ARCH=amd64
-XC_OS=linux darwin windows
+XC_ARCH=amd64 arm64
+#XC_OS=linux darwin windows
+XC_OS=darwin
 GIT_COMMIT=$$(git rev-parse HEAD)
 RELEASE_VERSION=$$(git for-each-ref refs/tags --sort=-taggerdate --format='%(refname:short)' --count=1)
 PKG := github.com/fenglyu/terraform-provider-netbox
